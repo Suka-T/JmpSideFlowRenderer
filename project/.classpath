@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="source"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk8u352-full"/>
+	<classpathentry kind="lib" path="../lib/dlib.jar"/>
+	<classpathentry kind="lib" path="../lib/flib.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMPLIB"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

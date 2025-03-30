@@ -1,0 +1,12 @@
+bin/
+zip/
+plugins/
+output/
+skin/
+*.jmz
+*.jar
+*.bat
+activate
+config.txt
+history.txt
+skin.txt
