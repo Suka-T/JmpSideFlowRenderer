@@ -19,7 +19,6 @@ public class LayoutConfig {
             boolean tickHighPrecision, //
             boolean isDarkout, //
             Color darkoutColor, //
-            boolean isDrawFocusNotesColor,//
             boolean isDrawFocusPbColor//
     ) {
         LayoutConfig instance = new LayoutConfig();
@@ -37,7 +36,6 @@ public class LayoutConfig {
         instance.tickHighPrecision = tickHighPrecision;
         instance.isDarkout = isDarkout;
         instance.darkoutColor = darkoutColor;
-        instance.isDrawFocusNotesColor = isDrawFocusNotesColor;
         instance.isDrawFocusPbColor = isDrawFocusPbColor;
         return instance;
     }

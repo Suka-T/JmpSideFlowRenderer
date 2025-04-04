@@ -82,13 +82,12 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     @Override
     public void loadFile(File file) {
         super.loadFile(file);
-
-        MainWindow.setLeftMeas(0);
+        MainWindow.loadFile();
     }
 
     @Override
     public void startSequencer() {
-        MainWindow.adjustTickBar();
+        //MainWindow.adjustTickBar();
     }
 
     @Override
