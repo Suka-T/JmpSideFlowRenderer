@@ -35,6 +35,9 @@ class ImageWorker extends Thread {
     public boolean isWait() {
         return isWait;
     }
+    public synchronized void setWait(boolean wait) {
+        isWait = wait;
+    }
 
     public void clearImage() {
         //notesImage = null;
@@ -77,7 +80,7 @@ class ImageWorker extends Thread {
                     offScreenNotesImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
                     offScreenNotesGraphic = offScreenNotesImage.createGraphics();
                     doClear = true;
-                    isWait = false;
+                    setWait(false);
                 }
                 
                 if (isWait == true) {
@@ -98,8 +101,9 @@ class ImageWorker extends Thread {
                 paintNotes(offScreenNotesGraphic, getLeftMeasTh());
                 isWait = true;
             }
-            catch (Exception e) {
-
+            catch (InterruptedException e) {
+                // TODO 自動生成された catch ブロック
+                e.printStackTrace();
             }
         }
     }
@@ -147,51 +151,48 @@ class ImageWorker extends Thread {
         }
 
         Track[] tracks = sequence.getTracks();
-        for (int trkCount = tracks.length - 1; trkCount >= 0; trkCount--) {
-
+        if (tracks == null) {
+            return;
+        }
+        
+        for (int trkIndex = tracks.length - 1; trkIndex >= 0; trkIndex--) {
+            MidiEvent[][] noteOnEvents = new MidiEvent[16][];
+            for (int i=0; i<16; i++) {
+                noteOnEvents[i] = new MidiEvent[128];
+            }
+            
             List<Integer> pbBufferX = new ArrayList<Integer>();
             List<Integer> pbBufferY = new ArrayList<Integer>();
-            for (int i = 0; i < tracks[trkCount].size(); i++) {
+            for (int i = 0; i < tracks[trkIndex].size(); i++) {
                 // Midiメッセージを取得
-                MidiEvent event = tracks[trkCount].get(i);
+                MidiEvent event = tracks[trkIndex].get(i);
+                if (event == null) {
+                    continue;
+                }
+                
                 MidiMessage message = event.getMessage();
                 if (message instanceof ShortMessage) {
                     // ShortMessage解析
-                    MidiEvent startEvent = event;
-                    if (vpEndTick < startEvent.getTick()) {
-                        continue;
-                    }
-                    if (vpStartTick > (startEvent.getTick() + vpLenTick)) {
-                        continue;
-                    }
-
-                    MidiEvent endEvent = event;
                     ShortMessage sMes = (ShortMessage) message;
                     if (toolkit.isNoteOn(sMes) == true) {
-                        /* ノーツ描画 */
-
                         // Note ON
-                        int startPoint = i - 10;
-                        startPoint = (startPoint < 0) ? 0 : startPoint;
-                        for (int j = startPoint; j < tracks[trkCount].size(); j++) {
-                            /* 次のNote Offを探索 */
-                            MidiEvent dEvent = tracks[trkCount].get(j);
-                            if (dEvent.getTick() <= startEvent.getTick()) {
-                                continue;
-                            }
-                            MidiMessage dMessage = dEvent.getMessage();
-                            if (dMessage instanceof ShortMessage) {
-                                ShortMessage dMes = (ShortMessage) dMessage;
-                                if (toolkit.isNoteOff(dMes) == true) {
-                                    if (dMes.getData1() == sMes.getData1()) {
-                                        endEvent = dEvent;
-                                        break;
-                                    }
-                                }
-                            }
+                        noteOnEvents[sMes.getChannel()][sMes.getData1()] = event;
+                    }
+                    else if (toolkit.isNoteOff(sMes) == true) {
+                        // Note OFF
+                        MidiEvent endEvent = event;
+                        MidiEvent startEvent = noteOnEvents[sMes.getChannel()][sMes.getData1()];
+                        noteOnEvents[sMes.getChannel()][sMes.getData1()] = null;
+                        if (startEvent == null) {
+                            continue;
                         }
-
-                        if (vpStartTick > endEvent.getTick()) {
+                        else if (vpEndTick < startEvent.getTick()) {
+                            continue;
+                        }
+                        else if (endEvent.getTick() <= startEvent.getTick()) {
+                            continue;
+                        }
+                        else if (vpStartTick > endEvent.getTick()) {
                             continue;
                         }
 
@@ -211,7 +212,7 @@ class ImageWorker extends Thread {
                         int height = mainWindow.getMeasCellHeight();
 
                         int colorIndex = sMes.getChannel();
-
+                        
                         // ノーマルカラー
                         Color bgColor = mainWindow.notesColor[colorIndex];
                         Color bdColor = mainWindow.notesBorderColor[colorIndex];
@@ -230,7 +231,6 @@ class ImageWorker extends Thread {
                             }
                         }
 
-                        // if (sMes.getChannel() == 0) {
                         if (width > 2) {
                             g.setColor(bgColor);
                             g.fillRect(x, y, width, height + 1);
@@ -245,7 +245,6 @@ class ImageWorker extends Thread {
                             g.drawLine(x, y + height, x, y + height);
                             // g.drawLine(x, y+height, x+width-1, y+height);
                         }
-                        // }
                     }
                     else if (toolkit.isPitchBend(sMes) == true) {
                         if (mainWindow.layout.isVisiblePb == true) {

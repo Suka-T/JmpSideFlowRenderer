@@ -34,7 +34,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     private JPanel contentPane;
 
     // 現在のレイアウト設定
-    public LayoutConfig layout = _DEBUG_LAYOUT;//NOTESBASE_LAYOUT;
+    public LayoutConfig layout = CLASSIC_LAYOUT;
 
     //
     // =##= カスタム(デバッグ用) =##=
@@ -65,7 +65,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
                     new Color(255, 255, 255), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    100, // ノーツのボーダーハイライト
+                    0, // ノーツのボーダーハイライト
                     200, // ノーツのフォーカスハイライト
                     false, // ノーツのフォーカスデザインを固定
                     true, // PBの表示
@@ -75,82 +75,19 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     true, // tickバーの高精度
                     true, // ダークアウトモード
                     Utility.convertColorAlpha(new Color(0, 0, 0), 150), // ダークアウトカラー
-                    true // フォーカスPB色描画
-            );
-
-    //
-    // =##= クラシック =##=
-    public static final LayoutConfig CLASSIC_LAYOUT2 = //
-            LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    new Color(255, 255, 255), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    100, // ノーツのボーダーハイライト
-                    200, // ノーツのフォーカスハイライト
-                    false, // ノーツのフォーカスデザインを固定
-                    false, // PBの表示
-                    true, // tickバーの表示
-                    false, // 縦線表示
-                    false, // 横線表示
-                    true, // tickバーの高精度
-                    false, // ダークアウトモード
-                    Utility.convertColorAlpha(new Color(0, 0, 0), 150), // ダークアウトカラー
                     false // フォーカスPB色描画
             );
 
     //
-    // =##= Notes base =##=
-    public static final LayoutConfig NOTESBASE_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    new Color(0, 255, 0), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    100, // ノーツのボーダーハイライト
-                    255, // ノーツのフォーカスハイライト
-                    true, // ノーツのフォーカスデザインを固定
-                    true, // PBの表示
-                    false, // tickバーの表示
-                    false, // 縦線表示
-                    false, // 横線表示
-                    true, // tickバーの高精度
-                    false, // ダークアウトモード
-                    Utility.convertColorAlpha(new Color(0, 0, 0), 150), // ダークアウトカラー
-                    true // フォーカスPB色描画
-            );
-
-    //
-    // =##= 軽量 =##=
+    // =##= ライトテーマ =##=
     public static final LayoutConfig LIGHT_LAYOUT = //
             LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    new Color(0, 255, 0), // カーソルカラー
+                    new Color(240, 240, 240), // 背景カラー
+                    Utility.convertHighLightColor(new Color(240, 240, 240), 40), // ボーダーカラー
+                    new Color(0, 0, 0), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    100, // ノーツのボーダーハイライト
-                    200, // ノーツのフォーカスハイライト
-                    false, // ノーツのフォーカスデザインを固定
-                    false, // PBの表示
-                    true, // tickバーの表示
-                    false, // 縦線表示
-                    false, // 横線表示
-                    false, // tickバーの高精度
-                    false, // ダークアウトモード
-                    Utility.convertColorAlpha(new Color(0, 0, 0), 150), // ダークアウトカラー
-                    false // フォーカスPB色描画
-            );
-
-    //
-    // =##= 黒っぽい =##=
-    public static final LayoutConfig BLACK_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 100), // ボーダーカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 255), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    100, // ノーツのボーダーハイライト
-                    200, // ノーツのフォーカスハイライト
+                    0, // ノーツのボーダーハイライト
+                    0, // ノーツのフォーカスハイライト
                     false, // ノーツのフォーカスデザインを固定
                     true, // PBの表示
                     true, // tickバーの表示
@@ -158,10 +95,9 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     false, // 横線表示
                     true, // tickバーの高精度
                     true, // ダークアウトモード
-                    Utility.convertColorAlpha(new Color(0, 0, 0), 150), // ダークアウトカラー
+                    Utility.convertColorAlpha(new Color(240, 240, 240), 150), // ダークアウトカラー
                     false // フォーカスPB色描画
             );
-
     //
 
     private ImagerWorkerManager imageWorkerMgr = null;
@@ -188,8 +124,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     private int topMidiNumber = 120;// 127;
     private int leftMeas = 0;
     private int zeroPosition = 10;
-    private int measCellWidth = 80;
-    private int measCellHeight = 8;
+    private int measCellWidth = 120;
+    private int measCellHeight = 7;
     private int dispMeasCount = 0;
 
     /**
@@ -197,7 +133,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
      */
     public JmpSideFlowRendererWindow() {
         this.setTransferHandler(new DropFileHandler());
-        this.setTitle("JMP SideFlowRenderer");
+        this.setTitle("JMP Side Flow Renderer");
         setBounds(10, 10, 1600, 1024);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -272,18 +208,30 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         setLeftMeas(0);
         calcDispMeasCount();
         resetPage();
-        
-        while(true) {
-            if (imageWorkerMgr.getWorker(0).isWait() == true) {
-                break;
-            }
-            try {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+
+//        
+//        Sequence sequence = JMPCoreAccessor.getSoundManager().getMidiUnit().getSequence();
+//        
+//        Track[] tracks = sequence.getTracks();
+//        if (tracks == null) {
+//            return;
+//        }
+//        
+//        IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
+//        for (int trkCount = tracks.length - 1; trkCount >= 0; trkCount--) {
+//            for (int i = 0; i < tracks[trkCount].size(); i++) {
+//                // Midiメッセージを取得
+//                MidiEvent event = tracks[trkCount].get(i);
+//                MidiMessage message = event.getMessage();
+//                if (message instanceof ShortMessage) {
+//                    // ShortMessage解析
+//                    ShortMessage sMes = (ShortMessage) message;
+//                    if (toolkit.isNoteOn(sMes) == true) {
+//                        System.out.println("trv :" + trkCount + " " + event.getTick());
+//                    }
+//                }
+//            }
+//        }
     }
 
     public void adjustTickBar() {
@@ -401,26 +349,23 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         }
 
         /* パフォーマンス表示 */
-//        if (useDoubleOffscreen == false) {
-//            int perX = 15;
-//            int perY = 60;
-//            int perWidth = 40;
-//            int perHeight = 15;
-//            int width = (perWidth * firstNotesThread.getNFPS()) / 60;
-//            for (int i = 0; i < width; i++) {
-//                int height = (i * perHeight) / perWidth;
-//                if (i < (perWidth * 0.2)) {
-//                    g.setColor(Color.RED);
-//                }
-//                else if (i < (perWidth * 0.5)) {
-//                    g.setColor(Color.YELLOW);
-//                }
-//                else {
+        {
+//            int _px = 10;
+//            int _py = 40;
+//            int _pw = 10;
+//            int _ph = 10;
+//            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
+//                if (imageWorkerMgr.getWorker(i).isWait() == true) {
 //                    g.setColor(Color.GREEN);
 //                }
-//                g.drawLine(perX + (i * 2), perY - height, perX + (i * 2), perY);
+//                else {
+//                    g.setColor(Color.RED);
+//                }
+//                g.fillRect(_px, _py, _pw, _ph);
+//                g.setColor(null);
+//                _px += _pw + 5;
 //            }
-//        }
+        }
     }
 
     public void resetPage() {

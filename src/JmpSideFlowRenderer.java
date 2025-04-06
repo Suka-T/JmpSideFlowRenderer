@@ -46,6 +46,7 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     @Override
     public void open() {
         MainWindow.setVisible(true);
+        MainWindow.adjustTickBar();
     }
 
     @Override
@@ -96,7 +97,9 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
 
     @Override
     public void updateTickPosition(long before, long after) {
-        MainWindow.adjustTickBar();
+        if (before != after) {
+            MainWindow.adjustTickBar();
+        }
     }
 
     @Override
