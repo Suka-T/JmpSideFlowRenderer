@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -23,6 +24,7 @@ import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
+import jlib.midi.INotesMonitor;
 
 public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseListener, MouseMotionListener, MouseWheelListener {
     
@@ -121,7 +123,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.1)), //
     };//
 
-    private int topMidiNumber = 120;// 127;
+    private int topMidiNumber = 112;//120;
     private int leftMeas = 0;
     private int zeroPosition = 10;
     private int measCellWidth = 120;
@@ -347,6 +349,53 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 flipPage();
             }
         }
+        
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        int sx = 20;
+        int sy = 50;
+        int sh = 20;
+        int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
+        String infoStr = "";
+        Color backStrColor = tc >= 128 ? Color.WHITE : Color.BLACK;
+        Color topStrColor = tc < 128 ? Color.WHITE : Color.BLACK;
+        infoStr = String.format("TIME: %02d:%02d / %02d:%02d", 
+                JMPCoreAccessor.getSoundManager().getPositionSecond() / 60,
+                JMPCoreAccessor.getSoundManager().getPositionSecond() % 60,
+                JMPCoreAccessor.getSoundManager().getLengthSecond() / 60,
+                JMPCoreAccessor.getSoundManager().getLengthSecond() % 60
+                );
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+        g.setColor(backStrColor);
+        g.drawString(infoStr, sx + 1, sy + 1);
+        g.setColor(topStrColor);
+        g.drawString(infoStr, sx, sy);
+        sy += sh;
+        infoStr = String.format("BPM: %.2f", midiUnit.getTempoInBPM());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+        g.setColor(backStrColor);
+        g.drawString(infoStr, sx + 1, sy + 1);
+        g.setColor(topStrColor);
+        g.drawString(infoStr, sx, sy);
+        sy += sh;
+        infoStr = String.format("NOTES: %d / %d", notesMonitor.getNotesCount(), notesMonitor.getNumOfNotes());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+        g.setColor(backStrColor);
+        g.drawString(infoStr, sx + 1, sy + 1);
+        g.setColor(topStrColor);
+        g.drawString(infoStr, sx, sy);
+        sy += sh;
+        infoStr = String.format("NPS: %d", (int)notesMonitor.getNps());
+        g.setColor(backStrColor);
+        g.drawString(infoStr, sx + 1, sy + 1);
+        g.setColor(topStrColor);
+        g.drawString(infoStr, sx, sy);
+        sy += sh;
+        infoStr = String.format("POLY: %d", notesMonitor.getPolyphony());
+        g.setColor(backStrColor);
+        g.drawString(infoStr, sx + 1, sy + 1);
+        g.setColor(topStrColor);
+        g.drawString(infoStr, sx, sy);
 
         /* パフォーマンス表示 */
         {
