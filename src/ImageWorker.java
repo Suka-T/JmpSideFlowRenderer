@@ -10,11 +10,11 @@ import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
-import javax.sound.midi.Track;
 
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.IMidiUnit;
+import jlib.midi.INotesMonitor;
 import jlib.midi.MidiUtility;
 
 class ImageWorker extends Thread {
@@ -29,6 +29,8 @@ class ImageWorker extends Thread {
     private boolean doClear = true;
 
     public ImageWorker() {
+        super();
+        this.setPriority(MAX_PRIORITY);
         isRunnable = true;
     }
     
@@ -53,10 +55,17 @@ class ImageWorker extends Thread {
     }
     
     public int getWidth() {
-        return JmpSideFlowRenderer.MainWindow.getWidth();
+        return JmpSideFlowRenderer.MainWindow.getOrgWidth();
     }
     public int getHeight() {
-        return JmpSideFlowRenderer.MainWindow.getHeight();
+        return JmpSideFlowRenderer.MainWindow.getOrgHeight();
+    }
+    
+    public int getImageWidth() {
+        return getWidth() * 3;
+    }
+    public int getImageHeight() {
+        return getHeight();
     }
 
     @Override
@@ -77,7 +86,7 @@ class ImageWorker extends Thread {
                 
                 if (offScreenNotesImage == null) {
                     // ノーツ画像
-                    offScreenNotesImage = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+                    offScreenNotesImage = new BufferedImage(getImageWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
                     offScreenNotesGraphic = offScreenNotesImage.createGraphics();
                     doClear = true;
                     setWait(false);
@@ -91,7 +100,7 @@ class ImageWorker extends Thread {
                 if (doClear == true) {
                     Graphics2D g2d = offScreenNotesImage.createGraphics();
                     g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                    g2d.fillRect(0, 0, getImageWidth(), getHeight());
                     g2d.dispose();
                     doClear = false;
                 }
@@ -123,22 +132,23 @@ class ImageWorker extends Thread {
     public void makeImage() {
         isWait = false;
     }
-    
 
     private void paintNotes(Graphics g, int leftMeas) {
         JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
         Sequence sequence = midiUnit.getSequence();
         if (sequence == null) {
             return;
         }
 
         // 上部位置の調整
+        int totalMeasCount = mainWindow.getDispMeasCount() * 2;
         int keyCount = (127 - mainWindow.getTopMidiNumber());
         int topOffset = (mainWindow.getMeasCellHeight() * keyCount);
 
-        long vpLenTick = (mainWindow.getDispMeasCount() * sequence.getResolution());
+        long vpLenTick = (totalMeasCount * sequence.getResolution());
         long vpStartTick = -(leftMeas) * sequence.getResolution();
         long vpEndTick = -(leftMeas) * sequence.getResolution() + vpLenTick;
 
@@ -147,15 +157,14 @@ class ImageWorker extends Thread {
 
         if (mainWindow.layout.isVisiblePb == true) {
             g.setColor(mainWindow.layout.pbBaseLineColor);
-            g.drawLine(0, pbCenterY, getWidth(), pbCenterY);
+            g.drawLine(0, pbCenterY, getImageWidth(), pbCenterY);
         }
-
-        Track[] tracks = sequence.getTracks();
-        if (tracks == null) {
+        
+        if (notesMonitor.getNumOfTrack() <= 0) {
             return;
         }
         
-        for (int trkIndex = tracks.length - 1; trkIndex >= 0; trkIndex--) {
+        for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
             MidiEvent[][] noteOnEvents = new MidiEvent[16][];
             for (int i=0; i<16; i++) {
                 noteOnEvents[i] = new MidiEvent[128];
@@ -163,9 +172,9 @@ class ImageWorker extends Thread {
             
             List<Integer> pbBufferX = new ArrayList<Integer>();
             List<Integer> pbBufferY = new ArrayList<Integer>();
-            for (int i = 0; i < tracks[trkIndex].size(); i++) {
+            for (int i = 0; i <  notesMonitor.getNumOfTrackEvent(trkIndex); i++) {
                 // Midiメッセージを取得
-                MidiEvent event = tracks[trkIndex].get(i);
+                MidiEvent event = notesMonitor.getTrackEvent(trkIndex, i);
                 if (event == null) {
                     continue;
                 }
@@ -214,36 +223,13 @@ class ImageWorker extends Thread {
                         int colorIndex = sMes.getChannel();
                         
                         // ノーマルカラー
-                        Color bgColor = mainWindow.notesColor[colorIndex];
-                        Color bdColor = mainWindow.notesBorderColor[colorIndex];
-                        if (mainWindow.layout.isDrawFocusNotesColor == true) {
-                            if (startEvent.getTick() <= midiUnit.getTickPosition() && midiUnit.getTickPosition() <= endEvent.getTick()
-                                    /*|| (sequencer.getTickPosition() >= endEvent.getTick())*/) {
-                                // フォーカスカラー
-                                if (mainWindow.layout.fixFocusNotesDesign == false) {
-                                    bgColor = mainWindow.notesFocusColor[colorIndex];
-                                    bdColor = mainWindow.notesColor[colorIndex];
-                                }
-                                else {
-                                    bgColor = FIX_FOCUS_NOTES_BGCOLOR;
-                                    bdColor = FIX_FOCUS_NOTES_BDCOLOR;
-                                }
-                            }
-                        }
-
                         if (width > 2) {
-                            g.setColor(bgColor);
-                            g.fillRect(x, y, width, height + 1);
-                            g.setColor(bdColor);
-                            g.drawRect(x, y, width, height);
+                            g.setColor(mainWindow.notesColor[colorIndex]);
+                            g.fill3DRect(x, y, width, height, mainWindow.layout.isNotes3D);
                         }
                         else {
-                            g.setColor(bgColor);
-                            g.fillRect(x, y, 1, height + 1);
-                            g.setColor(bdColor);
-                            g.drawLine(x, y, x, y);
-                            g.drawLine(x, y + height, x, y + height);
-                            // g.drawLine(x, y+height, x+width-1, y+height);
+                            g.setColor(mainWindow.notesColor[colorIndex]);
+                            g.fill3DRect(x, y, 2, height, mainWindow.layout.isNotes3D);
                         }
                     }
                     else if (toolkit.isPitchBend(sMes) == true) {

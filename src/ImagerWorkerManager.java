@@ -1,4 +1,3 @@
-import java.awt.Graphics;
 import java.awt.Image;
 
 class ImagerWorkerManager {
@@ -7,7 +6,7 @@ class ImagerWorkerManager {
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager() {
-        workers = new ImageWorker[5];
+        workers = new ImageWorker[2];
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new ImageWorker();
         }
@@ -35,13 +34,11 @@ class ImagerWorkerManager {
         }
     }
     
-    public void copyNotesImage(Graphics g) {
+    public Image getNotesImage() {
         if (workers[currentWorkerIndex].isWait() == true) {
-            Image notesImage = workers[currentWorkerIndex].getNotesImage();
-            if (notesImage != null) {
-                g.drawImage(notesImage, 0, 0, null);
-            }
+            return workers[currentWorkerIndex].getNotesImage();
         }
+        return null;
     }
     
     public void reset(int leftMeas, int dispMeas, int flipCount) {
