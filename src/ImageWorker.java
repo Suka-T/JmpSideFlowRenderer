@@ -132,8 +132,29 @@ class ImageWorker extends Thread {
     public void makeImage() {
         isWait = false;
     }
+    
+    protected void paintBorder(Graphics g) {
+        JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
+        g.setColor(mainWindow.layout.prBorderColor);
+        int x = mainWindow.getZeroPosition();
+        int y = 0;
+        if (mainWindow.layout.isVisibleHorizonBorder == true) {
+            while (y <= getImageHeight()) {
+                g.drawLine(x, y, x + getImageWidth(), y);
+                y += mainWindow.getMeasCellHeight();
+            }
+        }
+        x = mainWindow.getZeroPosition();
+        y = 0;
+        while (x <= getImageWidth()) {
+            if (mainWindow.layout.isVisibleVerticalBorder == true) {
+                g.drawLine(x, y, x, y + getImageHeight());
+            }
+            x += mainWindow.getMeasCellWidth();
+        }
+    }
 
-    private void paintNotes(Graphics g, int leftMeas) {
+    protected void paintNotes(Graphics g, int leftMeas) {
         JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
@@ -142,9 +163,11 @@ class ImageWorker extends Thread {
         if (sequence == null) {
             return;
         }
+        
+        paintBorder(g);
 
         // 上部位置の調整
-        int totalMeasCount = mainWindow.getDispMeasCount() * 2;
+        int totalMeasCount = (int)((double)mainWindow.getDispMeasCount() * 1.5);
         int keyCount = (127 - mainWindow.getTopMidiNumber());
         int topOffset = (mainWindow.getMeasCellHeight() * keyCount);
 

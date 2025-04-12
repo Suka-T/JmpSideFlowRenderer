@@ -13,7 +13,8 @@ public class LayoutConfig {
             int keyWidth, //
             boolean isVisibleVerticalBorder, //
             boolean isVisibleHorizonBorder, //
-            boolean isNotes3D//
+            boolean isNotes3D, //
+            boolean isVisibleMonitorStr
     ) {
         LayoutConfig instance = new LayoutConfig();
         instance.prBackColor = prBackColor;
@@ -25,6 +26,7 @@ public class LayoutConfig {
         instance.isVisibleVerticalBorder = isVisibleVerticalBorder;
         instance.isVisibleHorizonBorder = isVisibleHorizonBorder;
         instance.isNotes3D = isNotes3D;
+        instance.isVisibleMonitorStr = isVisibleMonitorStr;
         return instance;
     }
 
@@ -38,6 +40,7 @@ public class LayoutConfig {
     public boolean isVisibleVerticalBorder = false;
     public boolean isVisibleHorizonBorder = false;
     public boolean isNotes3D = true;
+    public boolean isVisibleMonitorStr = true;
     public LayoutConfig() {
     }
 

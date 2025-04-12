@@ -1,6 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -52,7 +53,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     60, // KeyStatusの幅
                     true, // 縦線表示
                     true, // 横線表示
-                    true // ノーツを3Dデザイン 
+                    true, // ノーツを3Dデザイン 
+                    false // 情報表示 
             );
 
     //
@@ -67,7 +69,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     60, // KeyStatusの幅
                     false, // 縦線表示
                     false, // 横線表示
-                    true // ノーツを3Dデザイン 
+                    true, // ノーツを3Dデザイン
+                    true // 情報表示 
             );
 
     //
@@ -82,7 +85,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     60, // KeyStatusの幅
                     false, // 縦線表示
                     false, // 横線表示
-                    true // ノーツを3Dデザイン 
+                    true, // ノーツを3Dデザイン
+                    true // 情報表示
             );
     //
 
@@ -210,8 +214,22 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     public void paint(Graphics g) {
         // super.paint(g);
         
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        
         BufferedImage screenImage = new BufferedImage(getOrgWidth(), getOrgHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics screenGraphic = screenImage.createGraphics();
+        
+        /* ノーツ描画 */
+        Sequence sequence = midiUnit.getSequence();
+        if (sequence != null) {
+            // フリップ
+            calcDispMeasCount();
+            if (midiUnit.isRunning() == true) {
+                flipPage();
+            }
+        }
+        
         paintMain(screenGraphic);
         if (getWidth() == getOrgWidth() && getHeight() == getOrgHeight()) {
             g.drawImage(screenImage, 0, 0, null);
@@ -223,56 +241,56 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     null);
         }
         
-        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        int sx = (int)((double)(layout.keyWidth + 10) * ((double)getWidth() / (double)getOrgWidth()));
-        int sy = 50;
-        int sh = 16;
-        int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
-        String infoStr = "";
-        Color backStrColor = tc >= 128 ? Color.WHITE : Color.BLACK;
-        Color topStrColor = tc < 128 ? Color.WHITE : Color.BLACK;
-        infoStr = String.format("TIME: %02d:%02d / %02d:%02d", 
-                JMPCoreAccessor.getSoundManager().getPositionSecond() / 60,
-                JMPCoreAccessor.getSoundManager().getPositionSecond() % 60,
-                JMPCoreAccessor.getSoundManager().getLengthSecond() / 60,
-                JMPCoreAccessor.getSoundManager().getLengthSecond() % 60
-                );
-        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
-        sy += sh;
-        infoStr = String.format("BPM: %.2f", midiUnit.getTempoInBPM());
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
-        sy += sh;
-        infoStr = String.format("NOTES: %d / %d", notesMonitor.getNotesCount(), notesMonitor.getNumOfNotes());
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
-        sy += sh;
-        infoStr = String.format("NPS: %d", (int)notesMonitor.getNps());
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
-        sy += sh;
-        infoStr = String.format("POLY: %d", notesMonitor.getPolyphony());
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
-        sy += sh;
-        infoStr = String.format("FPS: %d", getFPS());
-        g.setColor(backStrColor);
-        g.drawString(infoStr, sx + 1, sy + 1);
-        g.setColor(topStrColor);
-        g.drawString(infoStr, sx, sy);
+        if (layout.isVisibleMonitorStr == true) {
+            int sx = (int)((double)(layout.keyWidth + 10) * ((double)getWidth() / (double)getOrgWidth()));
+            int sy = 50;
+            int sh = 16;
+            int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
+            String infoStr = "";
+            Color backStrColor = tc >= 128 ? Color.WHITE : Color.BLACK;
+            Color topStrColor = tc < 128 ? Color.WHITE : Color.BLACK;
+            infoStr = String.format("TIME: %02d:%02d / %02d:%02d", 
+                    JMPCoreAccessor.getSoundManager().getPositionSecond() / 60,
+                    JMPCoreAccessor.getSoundManager().getPositionSecond() % 60,
+                    JMPCoreAccessor.getSoundManager().getLengthSecond() / 60,
+                    JMPCoreAccessor.getSoundManager().getLengthSecond() % 60
+                    );
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("BPM: %.2f", midiUnit.getTempoInBPM());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("NOTES: %d / %d", notesMonitor.getNotesCount(), notesMonitor.getNumOfNotes());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("NPS: %d", (int)notesMonitor.getNps());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("POLY: %d", notesMonitor.getPolyphony());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("FPS: %d", getFPS());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+        }
     }
 
     @Override
@@ -293,56 +311,77 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     public int getDispMeasCount() {
         return dispMeasCount;
     }
-    
-    private void paintBorder(Graphics g) {
+
+    private int cnt = 0;
+    private void paintMain(Graphics g) {
         g.setColor(layout.prBackColor);
         g.fillRect(0, 0, getOrgWidth(), getOrgHeight());
-        g.setColor(layout.prBorderColor);
-        int x = getZeroPosition();
-        int y = 0;
-        if (layout.isVisibleHorizonBorder == true) {
-            while (y <= getOrgHeight()) {
-                g.drawLine(x, y, x + getOrgWidth(), y);
-                y += getMeasCellHeight();
-            }
-        }
-        x = getZeroPosition();
-        y = 0;
-        while (x <= getOrgWidth()) {
-            if (layout.isVisibleVerticalBorder == true) {
-                g.drawLine(x, y, x, y + getOrgHeight());
-            }
-            x += getMeasCellWidth();
-        }
-    }
-
-    private void paintMain(Graphics g) {
         
-        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true) {
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
+            g.setColor(Color.WHITE);
+            FontMetrics fm = g.getFontMetrics();
+            String str;
+            int stringWidth = 0;
+            int stringHeight = 0; 
+
+            str = "_(┐「ε:)_";
+            stringWidth = fm.stringWidth(str);
+            stringHeight = fm.getHeight();
+            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
+            str = "Now loading.";
+            for (int i=0; i<(cnt / 10); i++) {
+                str += "." ;
+            }
+            
+            if (cnt >= 50) {
+                cnt = 0;
+            }
+            cnt++;
+            stringWidth = fm.stringWidth(str);
+            stringHeight = fm.getHeight();
+            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
+            return;
+        }
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         
-        paintBorder(g);
-        
-        int keyHeight = getMeasCellHeight();
-        
         /* ノーツ描画 */
-        if (imageWorkerMgr.getNotesImage() != null) {
-            Sequence sequence = midiUnit.getSequence();
-            if (sequence != null) {
-                int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getSequence().getResolution();
-                int tickX = 0;
+        Sequence sequence = midiUnit.getSequence();
+        if (sequence != null) {
+            if (imageWorkerMgr.getNotesImage() == null) {
+                // 描画が追いついていない 
+                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
+                FontMetrics fm = g.getFontMetrics();
+                String str = "Rendering in progress.";
+                int stringWidth = fm.stringWidth(str);
+                int stringHeight = fm.getHeight();
+                g.setColor(Color.WHITE);
+                g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2);
+            }
+            else {
+                long startMeas = (long) midiUnit.getTickPosition() / sequence.getResolution();
                 long offset = (long) midiUnit.getTickPosition() % sequence.getResolution();
                 int offsetX = (int) (getMeasCellWidth() * (double) ((double) offset / (double) sequence.getResolution()));
-                tickX = (int) (getZeroPosition() + (startMeas * getMeasCellWidth())) + (getLeftMeas() * getMeasCellWidth());
-                tickX += offsetX;
-                g.drawImage(imageWorkerMgr.getNotesImage(), layout.keyWidth-tickX, 0, null);
+                int tickX = (int) (getZeroPosition() + (startMeas * getMeasCellWidth())) + (getLeftMeas() * getMeasCellWidth());
+                g.drawImage(imageWorkerMgr.getNotesImage(), layout.keyWidth - (tickX + offsetX), 0, null);
             }
+        }
+        else {
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
+            FontMetrics fm = g.getFontMetrics();
+            String str = "Drag and Drop your MIDI or MIDI and AUDIO files here.";
+            int stringWidth = fm.stringWidth(str);
+            int stringHeight = fm.getHeight();
+            g.setColor(Color.WHITE);
+            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2);
         }
         
         // キーステート描画
         if (layout.keyWidth > 0) {
+            INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
             g.setColor(layout.prBackColor);
             g.fillRect(0, 0, layout.keyWidth, getOrgHeight());
+            int keyHeight = getMeasCellHeight();
             int keyCount = (127 - getTopMidiNumber());
             int topOffset = (keyHeight * keyCount);
             int effWidth = (int)((double)layout.keyWidth * 0.95);
@@ -369,15 +408,6 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         
         /* Tickbar描画 */
         paintTickPosition(g, layout.keyWidth);
-
-        Sequence sequence = midiUnit.getSequence();
-        if (sequence != null) {
-            // フリップ
-            calcDispMeasCount();
-            if (midiUnit.isRunning() == true) {
-                flipPage();
-            }
-        }
     }
 
     public void resetPage() {
