@@ -23,6 +23,7 @@ import javax.swing.border.EmptyBorder;
 
 import drawLib.gui.DrawLibFrame;
 import function.Utility;
+import jlib.core.IDataManager;
 import jlib.core.ISystemManager;
 import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
@@ -31,6 +32,8 @@ import jlib.midi.INotesMonitor;
 
 public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseListener, MouseMotionListener, MouseWheelListener {
     
+    public static final int DEFAULT_WINDOW_WIDTH = 1280;
+    public static final int DEFAULT_WINDOW_HEIGHT = 780;
     public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
     
     // 次のページにフリップするpx数
@@ -118,7 +121,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     public JmpSideFlowRendererWindow() {
         this.setTransferHandler(new DropFileHandler());
         this.setTitle("JMP Side Flow Renderer");
-        setBounds(10, 10, orgDispWidth, orgDispHeight);
+        setBounds(10, 10, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         contentPane.setLayout(new BorderLayout(0, 0));
@@ -209,6 +212,9 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
 
         resetPage();
     }
+    
+    private BufferedImage orgScreenImage = null;
+    private Graphics orgScreenGraphic = null;
 
     @Override
     public void paint(Graphics g) {
@@ -217,8 +223,10 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         
-        BufferedImage screenImage = new BufferedImage(getOrgWidth(), getOrgHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics screenGraphic = screenImage.createGraphics();
+        if (orgScreenImage == null) {
+            orgScreenImage = new BufferedImage(getOrgWidth(), getOrgHeight(), BufferedImage.TYPE_INT_ARGB);
+            orgScreenGraphic = orgScreenImage.createGraphics();
+        }
         
         /* ノーツ描画 */
         Sequence sequence = midiUnit.getSequence();
@@ -230,14 +238,14 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             }
         }
         
-        paintMain(screenGraphic);
+        paintMain(orgScreenGraphic);
         if (getWidth() == getOrgWidth() && getHeight() == getOrgHeight()) {
-            g.drawImage(screenImage, 0, 0, null);
+            g.drawImage(orgScreenImage, 0, 0, null);
         }
         else {
-            g.drawImage(screenImage, 
+            g.drawImage(orgScreenImage, 
                     0, 0, getWidth(), getHeight(), 
-                    0, 0, screenImage.getWidth(), screenImage.getHeight(), 
+                    0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
                     null);
         }
         
@@ -256,6 +264,12 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     JMPCoreAccessor.getSoundManager().getLengthSecond() % 60
                     );
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
+            infoStr = String.format("TICK: %d", midiUnit.getTickPosition());
             g.setColor(backStrColor);
             g.drawString(infoStr, sx + 1, sy + 1);
             g.setColor(topStrColor);
@@ -290,6 +304,17 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             g.drawString(infoStr, sx + 1, sy + 1);
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
+            
+            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
+                int dbx = sx + (i * 15);
+                if (imageWorkerMgr.getWorker(i).isWait() == true) {
+                    g.setColor(Color.GREEN);
+                }
+                else {
+                    g.setColor(Color.RED);
+                }
+                g.fillRect(dbx, sy + 5, 10, 10);
+            }
         }
     }
 
@@ -330,6 +355,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             stringHeight = fm.getHeight();
             g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
             str = "Now loading.";
+            stringWidth = fm.stringWidth(str);
             for (int i=0; i<(cnt / 10); i++) {
                 str += "." ;
             }
@@ -338,7 +364,6 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 cnt = 0;
             }
             cnt++;
-            stringWidth = fm.stringWidth(str);
             stringHeight = fm.getHeight();
             g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
             return;
@@ -359,11 +384,11 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2);
             }
             else {
-                long startMeas = (long) midiUnit.getTickPosition() / sequence.getResolution();
-                long offset = (long) midiUnit.getTickPosition() % sequence.getResolution();
-                int offsetX = (int) (getMeasCellWidth() * (double) ((double) offset / (double) sequence.getResolution()));
-                int tickX = (int) (getZeroPosition() + (startMeas * getMeasCellWidth())) + (getLeftMeas() * getMeasCellWidth());
-                g.drawImage(imageWorkerMgr.getNotesImage(), layout.keyWidth - (tickX + offsetX), 0, null);
+                // 現在の画面に表示する相対tick位置を求める 
+                long relPosTick =  midiUnit.getTickPosition() + sequence.getResolution() * getLeftMeas();
+                // 相対tick位置を座標に変換(TICK × COORD / RESOLUTION)
+                int tickX = (int) ((double)relPosTick * (double)getMeasCellWidth() / (double)sequence.getResolution()); 
+                g.drawImage(imageWorkerMgr.getNotesImage(), layout.keyWidth - tickX, 0, null);
             }
         }
         else {
@@ -640,7 +665,13 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
                     JMPCoreAccessor.getFileManager().loadDualFile(path2, path1);
                 }
-                JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
+                
+                String midiOutName = JMPCoreAccessor.getDataManager().getConfigParam(IDataManager.CFG_KEY_MIDIOUT);
+                System.out.println(midiOutName);
+                if (midiOutName.equalsIgnoreCase("NULL") == false) {
+                    // 同時再生時にmidiOutを指定する用途は少ない？ 
+                    JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
+                }
             }
             else {
                 String path = files.get(0).getPath();

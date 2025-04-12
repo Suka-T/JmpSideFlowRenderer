@@ -6,7 +6,7 @@ class ImagerWorkerManager {
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager() {
-        workers = new ImageWorker[2];
+        workers = new ImageWorker[3];
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new ImageWorker();
         }
@@ -57,12 +57,14 @@ class ImagerWorkerManager {
     public void flipPage(int newLeftMeas, int dispMeas, int flipCount) {
         workers[currentWorkerIndex].clearImage();
         ImageWorker nextNotesThread = workers[currentWorkerIndex]; 
+        int[] nextCache = workers[currentWorkerIndex].getTrackCache();
         
         currentWorkerIndex = (currentWorkerIndex + 1 >= workers.length) ? 0 : currentWorkerIndex + 1;
         int offsetLeftMeas = (newLeftMeas < 0) ? -(newLeftMeas) : newLeftMeas;
         int flipMergin = -(flipCount);
         int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * (workers.length - 1));
         nextNotesThread.setLeftMeasTh(-(flipLine));
+        nextNotesThread.copyTrackCacheFrom(nextCache);
         nextNotesThread.makeImage();
     }
 }
