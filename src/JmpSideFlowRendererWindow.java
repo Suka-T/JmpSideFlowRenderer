@@ -35,6 +35,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 780;
     public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
+    public static final int DEFAULT_1MEAS_WIDTH = 128 * 2;
+    public static final int DEFAULT_TICK_MEAS = 2;
     
     // 次のページにフリップするpx数
     private static final int NEXT_FLIP_COUNT = 0;
@@ -53,9 +55,9 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     new Color(0, 255, 0), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
                     true, // PBの表示
-                    60, // KeyStatusの幅
-                    true, // 縦線表示
-                    true, // 横線表示
+                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // TickBar位置
+                    false, // 縦線表示
+                    false, // 横線表示
                     true, // ノーツを3Dデザイン 
                     false // 情報表示 
             );
@@ -66,11 +68,11 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             LayoutConfig.createConfig(//
                     new Color(0, 0, 0), // 背景カラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    new Color(255, 255, 255), // カーソルカラー
+                    Utility.convertCodeToHtmlColor("#FFFFFF"), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    true, // PBの表示
-                    60, // KeyStatusの幅
-                    false, // 縦線表示
+                    false, // PBの表示
+                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
+                    true, // 縦線表示
                     false, // 横線表示
                     true, // ノーツを3Dデザイン
                     true // 情報表示 
@@ -80,13 +82,13 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     // =##= ライトテーマ =##=
     public static final LayoutConfig LIGHT_LAYOUT = //
             LayoutConfig.createConfig(//
-                    new Color(230, 230, 230), // 背景カラー
-                    Utility.convertHighLightColor(new Color(230, 230, 230), 40), // ボーダーカラー
-                    new Color(0, 0, 0), // カーソルカラー
+                    Utility.convertCodeToHtmlColor("#c0c0c0"), // 背景カラー
+                    Utility.convertHighLightColor(Utility.convertCodeToHtmlColor("#c0c0c0"), 40), // ボーダーカラー
+                    Utility.convertCodeToHtmlColor("#000000"), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    true, // PBの表示
-                    60, // KeyStatusの幅
-                    false, // 縦線表示
+                    false, // PBの表示
+                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
+                    true, // 縦線表示
                     false, // 横線表示
                     true, // ノーツを3Dデザイン
                     true // 情報表示
@@ -101,7 +103,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     private int topMidiNumber = 110;
     private int leftMeas = 0;
     private int zeroPosition = 0;
-    private int measCellWidth = 120;
+    private int measCellWidth = DEFAULT_1MEAS_WIDTH;
     private int measCellHeight = 5;
     private int dispMeasCount = 0;
     private int orgDispWidth = 1280;
@@ -161,15 +163,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         }
         cursorColor = new Color[] { //
                 Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 1.0)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.9)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.8)), //
                 Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.7)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.6)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.5)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.4)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.3)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.2)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.1)), //
         };//
     }
 
@@ -250,7 +244,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         }
         
         if (layout.isVisibleMonitorStr == true) {
-            int sx = (int)((double)(layout.keyWidth + 10) * ((double)getWidth() / (double)getOrgWidth()));
+            int sx = 20;
             int sy = 50;
             int sh = 16;
             int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
@@ -269,18 +263,12 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
             sy += sh;
-            infoStr = String.format("TICK: %d", midiUnit.getTickPosition());
-            g.setColor(backStrColor);
-            g.drawString(infoStr, sx + 1, sy + 1);
-            g.setColor(topStrColor);
-            g.drawString(infoStr, sx, sy);
-            sy += sh;
-            infoStr = String.format("BPM: %.2f", midiUnit.getTempoInBPM());
-            g.setColor(backStrColor);
-            g.drawString(infoStr, sx + 1, sy + 1);
-            g.setColor(topStrColor);
-            g.drawString(infoStr, sx, sy);
-            sy += sh;
+//            infoStr = String.format("TICK: %d", midiUnit.getTickPosition());
+//            g.setColor(backStrColor);
+//            g.drawString(infoStr, sx + 1, sy + 1);
+//            g.setColor(topStrColor);
+//            g.drawString(infoStr, sx, sy);
+//            sy += sh;
             infoStr = String.format("NOTES: %d / %d", notesMonitor.getNotesCount(), notesMonitor.getNumOfNotes());
             g.setColor(backStrColor);
             g.drawString(infoStr, sx + 1, sy + 1);
@@ -299,12 +287,19 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
             sy += sh;
+            infoStr = String.format("BPM: %.2f", midiUnit.getTempoInBPM());
+            g.setColor(backStrColor);
+            g.drawString(infoStr, sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(infoStr, sx, sy);
+            sy += sh;
             infoStr = String.format("FPS: %d", getFPS());
             g.setColor(backStrColor);
             g.drawString(infoStr, sx + 1, sy + 1);
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
-            
+            sy += sh;
+/*
             for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
                 int dbx = sx + (i * 15);
                 if (imageWorkerMgr.getWorker(i).isWait() == true) {
@@ -315,6 +310,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 }
                 g.fillRect(dbx, sy + 5, 10, 10);
             }
+*/
         }
     }
 
@@ -350,17 +346,17 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             int stringWidth = 0;
             int stringHeight = 0; 
 
-            str = "_(┐「ε:)_";
+            str = "＼＿ヘ(Д｀*)";
             stringWidth = fm.stringWidth(str);
             stringHeight = fm.getHeight();
             g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
-            str = "Now loading.";
+            str = "Now loading";
             stringWidth = fm.stringWidth(str);
             for (int i=0; i<(cnt / 10); i++) {
                 str += "." ;
             }
             
-            if (cnt >= 50) {
+            if (cnt >= 30) {
                 cnt = 0;
             }
             cnt++;
@@ -375,64 +371,76 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         if (sequence != null) {
             if (imageWorkerMgr.getNotesImage() == null) {
                 // 描画が追いついていない 
+                g.setColor(Color.WHITE);
                 g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
                 FontMetrics fm = g.getFontMetrics();
-                String str = "Rendering in progress.";
+                String str = "...φ(｡_｡*)";
                 int stringWidth = fm.stringWidth(str);
                 int stringHeight = fm.getHeight();
-                g.setColor(Color.WHITE);
-                g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2);
+                g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
+                str = "Rendering now";
+                stringWidth = fm.stringWidth(str);
+                stringHeight = fm.getHeight();
+                g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
             }
             else {
                 // 現在の画面に表示する相対tick位置を求める 
                 long relPosTick =  midiUnit.getTickPosition() + sequence.getResolution() * getLeftMeas();
                 // 相対tick位置を座標に変換(TICK × COORD / RESOLUTION)
                 int tickX = (int) ((double)relPosTick * (double)getMeasCellWidth() / (double)sequence.getResolution()); 
-                g.drawImage(imageWorkerMgr.getNotesImage(), layout.keyWidth - tickX, 0, null);
+                g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
+                
+                // 衝突エフェクト描画
+                if (layout.tickBarPosition > 0) {
+                    INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+                    g.setColor(layout.prBackColor);
+                    //g.fillRect(0, 0, layout.keyWidth, getOrgHeight());
+                    int keyHeight = getMeasCellHeight();
+                    int keyCount = (127 - getTopMidiNumber());
+                    int topOffset = (keyHeight * keyCount);
+                    int effWidth = 100;
+                    int effHeight = keyHeight;
+                    int effMarginCnt = 16;
+                    int effMargin = 255 / effMarginCnt;
+                    for (int i = 0; i < 128; i++) {
+                        int x = 0;
+                        int y = topOffset + (keyHeight * i);
+                        int midiNo = 127 - i;
+                        for (int ch=0; ch<16; ch++) {
+                            if (true == notesMonitor.isNoteOn(ch, midiNo)) {
+                                for (int j=1; j<=effMarginCnt; j++) {
+                                    int w = effWidth / 15;
+                                    //g.setColor(new Color(notesColor[ch].getRed(), notesColor[ch].getGreen(), notesColor[ch].getBlue(), 255 - effMargin * j));
+                                    g.setColor(new Color(layout.cursorMainColor.getRed(), layout.cursorMainColor.getGreen(), layout.cursorMainColor.getBlue(), 255 - effMargin * j));
+                                    //g.fillRect(x + (layout.keyWidth - j * w), y, w, effHeight);
+                                    g.fillRect(x + layout.tickBarPosition + ((j - 1) * w), y, w, effHeight);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                /* Tickbar描画 */
+                if (sequence != null) {
+                    paintTickPosition(g, layout.tickBarPosition);
+                }
             }
         }
         else {
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
             FontMetrics fm = g.getFontMetrics();
-            String str = "Drag and Drop your MIDI or MIDI and AUDIO files here.";
+            g.setColor(Color.WHITE);
+            String str = "_(┐「ε:)_";
             int stringWidth = fm.stringWidth(str);
             int stringHeight = fm.getHeight();
-            g.setColor(Color.WHITE);
-            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2);
+            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
+            str = "Drag and Drop your MIDI or MIDI and AUDIO files here.";
+            stringWidth = fm.stringWidth(str);
+            stringHeight = fm.getHeight();
+            g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
         }
-        
-        // キーステート描画
-        if (layout.keyWidth > 0) {
-            INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-            g.setColor(layout.prBackColor);
-            g.fillRect(0, 0, layout.keyWidth, getOrgHeight());
-            int keyHeight = getMeasCellHeight();
-            int keyCount = (127 - getTopMidiNumber());
-            int topOffset = (keyHeight * keyCount);
-            int effWidth = (int)((double)layout.keyWidth * 0.95);
-            int effHeight = keyHeight;
-            int effMarginCnt = 16;
-            int effMargin = 255 / effMarginCnt;
-            for (int i = 0; i < 128; i++) {
-                int x = 0;
-                int y = topOffset + (keyHeight * i);
-                int midiNo = 127 - i;
-                for (int ch=0; ch<16; ch++) {
-                    if (true == notesMonitor.isNoteOn(ch, midiNo)) {
-                        for (int j=1; j<=effMarginCnt; j++) {
-                            int w = effWidth / 15;
-                            g.setColor(new Color(notesColor[ch].getRed(), notesColor[ch].getGreen(), notesColor[ch].getBlue(), 255 - effMargin * j));
-                            //g.setColor(new Color(255, 255, 255, 255 - effMargin * j));
-                            g.fillRect(x + (layout.keyWidth - j * w), y, w, effHeight);
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-        
-        /* Tickbar描画 */
-        paintTickPosition(g, layout.keyWidth);
+
     }
 
     public void resetPage() {
@@ -459,7 +467,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     }
 
     public void paintTickPosition(Graphics g, int x) {
-        if (layout.keyWidth <= 0) {
+        if (layout.tickBarPosition <= 0) {
             return;
         }
 
@@ -476,6 +484,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         for (int i = 0; i < len; i++) {
             g.setColor(cursorColor[i]);
             g.drawLine(x - i, 0, x - i, getOrgHeight());
+            g.drawLine(x + i, 0, x + i, getOrgHeight());
         }
     }
 
@@ -556,6 +565,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
+/*
         int amount;
         if (e.isAltDown()) {
             amount = 1;
@@ -590,6 +600,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         }
         
         resetPage();
+*/
     }
 
     public int getLeftMeas() {

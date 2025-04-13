@@ -57,14 +57,16 @@ class ImagerWorkerManager {
     public void flipPage(int newLeftMeas, int dispMeas, int flipCount) {
         workers[currentWorkerIndex].clearImage();
         ImageWorker nextNotesThread = workers[currentWorkerIndex]; 
-        int[] nextCache = workers[currentWorkerIndex].getTrackCache();
+        //int[] nextCache = workers[currentWorkerIndex].getTrackCache();
         
         currentWorkerIndex = (currentWorkerIndex + 1 >= workers.length) ? 0 : currentWorkerIndex + 1;
         int offsetLeftMeas = (newLeftMeas < 0) ? -(newLeftMeas) : newLeftMeas;
         int flipMergin = -(flipCount);
         int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * (workers.length - 1));
         nextNotesThread.setLeftMeasTh(-(flipLine));
-        nextNotesThread.copyTrackCacheFrom(nextCache);
+        
+        // TODO ここでキャッシュ情報を渡したいが高頻度でバグるのでやらない 要検討 
+        //nextNotesThread.copyTrackCacheFrom(nextCache);
         nextNotesThread.makeImage();
     }
 }

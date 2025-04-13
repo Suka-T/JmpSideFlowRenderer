@@ -10,7 +10,7 @@ public class LayoutConfig {
             Color cursorMainColor, //
             Color pbBaseLineColor, //
             boolean isVisiblePb, //
-            int keyWidth, //
+            int tickBarPosition, //
             boolean isVisibleVerticalBorder, //
             boolean isVisibleHorizonBorder, //
             boolean isNotes3D, //
@@ -22,7 +22,7 @@ public class LayoutConfig {
         instance.cursorMainColor = cursorMainColor;
         instance.pbBaseLineColor = pbBaseLineColor;
         instance.isVisiblePb = isVisiblePb;
-        instance.keyWidth = keyWidth;
+        instance.tickBarPosition = tickBarPosition;
         instance.isVisibleVerticalBorder = isVisibleVerticalBorder;
         instance.isVisibleHorizonBorder = isVisibleHorizonBorder;
         instance.isNotes3D = isNotes3D;
@@ -36,7 +36,7 @@ public class LayoutConfig {
     public Color pbBaseLineColor = Utility.convertHighLightColor(prBackColor, -140);
     // 表示設定
     public boolean isVisiblePb = true;
-    public int keyWidth = 60;
+    public int tickBarPosition = 60;
     public boolean isVisibleVerticalBorder = false;
     public boolean isVisibleHorizonBorder = false;
     public boolean isNotes3D = true;

@@ -29,11 +29,21 @@ class ImageWorker extends Thread {
     private boolean doClear = true;
     
     private int[] indexCache = null;
+    private MidiEvent[][] noteOnEvents = null;
+    private List<Integer> pbBufferX = null;
+    private List<Integer> pbBufferY = null;
 
     public ImageWorker() {
         super();
         this.setPriority(MAX_PRIORITY);
         isRunnable = true;
+        
+        noteOnEvents = new MidiEvent[16][];
+        for (int i=0; i<16; i++) {
+            noteOnEvents[i] = new MidiEvent[128];
+        }
+        pbBufferX = new ArrayList<Integer>();
+        pbBufferY = new ArrayList<Integer>();
     }
     
     public boolean isWait() {
@@ -64,7 +74,7 @@ class ImageWorker extends Thread {
     }
     
     public int getImageWidth() {
-        return getWidth() * 3;
+        return (getWidth() + JmpSideFlowRenderer.MainWindow.layout.tickBarPosition) * 3;
     }
     public int getImageHeight() {
         return getHeight();
@@ -100,7 +110,7 @@ class ImageWorker extends Thread {
                 
                 if (offScreenNotesImage == null) {
                     // ノーツ画像
-                    offScreenNotesImage = new BufferedImage(getImageWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB);
+                    offScreenNotesImage = new BufferedImage(getImageWidth(), getImageHeight(), BufferedImage.TYPE_INT_ARGB);
                     offScreenNotesGraphic = offScreenNotesImage.createGraphics();
                     indexCache = null;
                     doClear = true;
@@ -115,7 +125,7 @@ class ImageWorker extends Thread {
                 if (doClear == true) {
                     Graphics2D g2d = offScreenNotesImage.createGraphics();
                     g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-                    g2d.fillRect(0, 0, getImageWidth(), getHeight());
+                    g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
                     g2d.dispose();
                     doClear = false;
                 }
@@ -182,15 +192,17 @@ class ImageWorker extends Thread {
         paintBorder(g);
 
         // 上部位置の調整
-        //int terminateMeasCount = (int)((double)mainWindow.getDispMeasCount() * 3.0);
+        int offsetCoordX = mainWindow.layout.tickBarPosition;
+        int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
+        int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
         int totalMeasCount = (int)((double)mainWindow.getDispMeasCount() * 2.0);
         int keyCount = (127 - mainWindow.getTopMidiNumber());
         int topOffset = (mainWindow.getMeasCellHeight() * keyCount);
 
         long absLeftMeas = -(leftMeas);
         long vpLenTick = (totalMeasCount * sequence.getResolution());
-        long vpStartTick = absLeftMeas * sequence.getResolution();
-        long vpEndTick = vpStartTick + vpLenTick;
+        long vpStartTick = absLeftMeas * sequence.getResolution() - offsetCoordXtoTick;
+        long vpEndTick = vpStartTick + vpLenTick + (offsetCoordXtoTick * 2);
 
         int pbMaxHeight = 100;
         int pbCenterY = (pbMaxHeight / 2) + 100;
@@ -212,15 +224,23 @@ class ImageWorker extends Thread {
         }
         
         for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
-            MidiEvent[][] noteOnEvents = new MidiEvent[16][];
             for (int i=0; i<16; i++) {
-                noteOnEvents[i] = new MidiEvent[128];
+                for (int j=0; j<128; j++) {
+                    noteOnEvents[i][j] = null;
+                }
             }
             
-            List<Integer> pbBufferX = new ArrayList<Integer>();
-            List<Integer> pbBufferY = new ArrayList<Integer>();
+            pbBufferX.clear();
+            pbBufferY.clear();
             
-            boolean notCache = false;
+            boolean notCache = true;
+            /*
+            if (notesMonitor.getNumOfNotes() >= 1000000) {
+                // TODO ノーツ100万以上はキャッシュを使用することで高速化する。
+                //       ただし、バイナリ構成によってバグるため要検討
+                notCache = false;
+            }
+            */
             int startIndex = indexCache[trkIndex];
             if (vpEndTick > midiUnit.getTickLength() - (totalMeasCount * sequence.getResolution())) {
                 // 終端付近は取り逃さないようにする 
@@ -247,6 +267,9 @@ class ImageWorker extends Thread {
                     }
                     
                     if (isExestsNoteOn == false) {
+                        if (notCache == false) {
+                            indexCache[trkIndex] = i;
+                        }
                         break;
                     }
                 }
@@ -255,18 +278,19 @@ class ImageWorker extends Thread {
                 if (message instanceof ShortMessage) {
                     // ShortMessage解析
                     ShortMessage sMes = (ShortMessage) message;
+                    int channel = sMes.getChannel();
+                    int data1 = sMes.getData1();
+                    //int data2 = sMes.getData2();
+                    
                     if (toolkit.isNoteOn(sMes) == true) {
                         // Note ON
-                        noteOnEvents[sMes.getChannel()][sMes.getData1()] = event;
-                        if (notCache == false) {
-                            indexCache[trkIndex] = i;
-                        }
+                        noteOnEvents[channel][data1] = event;
                     }
                     else if (toolkit.isNoteOff(sMes) == true) {
                         // Note OFF
                         MidiEvent endEvent = event;
-                        MidiEvent startEvent = noteOnEvents[sMes.getChannel()][sMes.getData1()];
-                        noteOnEvents[sMes.getChannel()][sMes.getData1()] = null;
+                        MidiEvent startEvent = noteOnEvents[channel][data1];
+                        noteOnEvents[channel][data1] = null;
                         if (startEvent == null) {
                             // 例外 対のNoteONが無いNoteOff  
                             continue;
@@ -275,36 +299,28 @@ class ImageWorker extends Thread {
                             // 例外 NoteOnとNoteOffのtick矛盾   
                             continue;
                         }
-                        else if (vpStartTick > endEvent.getTick()) {
+                        else if (vpStartTick > event.getTick()) {
                             // ビューポート範囲外は無視 
                             continue;
                         }
 
                         // 描画開始
-                        int x = 0;
-                        int key = sMes.getData1();
-                        int startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution());
+                        int startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
                         int startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
-                        startMeas += leftMeas;
-                        x = (int) (mainWindow.getZeroPosition() + (startMeas * mainWindow.getMeasCellWidth()))
-                                + (int) (mainWindow.getMeasCellWidth() * (double) ((double) startOffset / (double) sequence.getResolution()));
+                        int x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+                        int y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
 
-                        int y = ((127 - key) * mainWindow.getMeasCellHeight()) + topOffset;
-
-                        long tickLen = endEvent.getTick() - startEvent.getTick();
-                        int width = (int) ((double) (mainWindow.getMeasCellWidth()) * (double) ((double) tickLen / (double) sequence.getResolution()));
-
+                        int width = (int) (mainWindow.getMeasCellWidth()
+                                * (double) (endEvent.getTick() - startEvent.getTick()) / sequence.getResolution());
                         int height = mainWindow.getMeasCellHeight();
-
-                        int colorIndex = sMes.getChannel();
                         
                         // ノーマルカラー
                         if (width > 2) {
-                            g.setColor(mainWindow.notesColor[colorIndex]);
+                            g.setColor(mainWindow.notesColor[channel]);
                             g.fill3DRect(x, y, width, height, mainWindow.layout.isNotes3D);
                         }
                         else {
-                            g.setColor(mainWindow.notesColor[colorIndex]);
+                            g.setColor(mainWindow.notesColor[channel]);
                             g.fill3DRect(x, y, 2, height, mainWindow.layout.isNotes3D);
                         }
                     }
@@ -316,17 +332,15 @@ class ImageWorker extends Thread {
 
                             int signed = (pbValue < 0) ? -1 : 1;
 
-                            int startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution());
+                            int startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution()) + leftMeas;
                             int startOffset = (int) ((double) event.getTick() % (double) sequence.getResolution());
-                            startMeas += leftMeas;
-                            int x = (int) (mainWindow.getZeroPosition() + (startMeas * mainWindow.getMeasCellWidth()))
-                                    + (int) (mainWindow.getMeasCellWidth() * (double) ((double) startOffset / (double) sequence.getResolution()));
+                            int x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
 
                             int absPbValue = signed * pbValue;
                             int y = pbCenterY - (signed * ((absPbValue * pbMaxHeight) / 8192));
 
                             // PB描画
-                            Color pbColor = mainWindow.notesColor[sMes.getChannel()];
+                            Color pbColor = mainWindow.notesColor[channel];
                             int pastX = 0;
                             int pastY = pbCenterY;
                             if (pbBufferX.isEmpty() == false) {
