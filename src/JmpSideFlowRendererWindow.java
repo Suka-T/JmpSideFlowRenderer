@@ -307,7 +307,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         
         if (layout.isVisibleMonitorStr == true) {
             int sx = 15;
-            int sy = 15;
+            int sy = 20;
             int sh = 16;
             int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
             String infoStr = "";

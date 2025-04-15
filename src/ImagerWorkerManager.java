@@ -6,9 +6,9 @@ class ImagerWorkerManager {
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager() {
-        workers = new ImageWorker[3];
+        workers = new NotesImageWorker[3];
         for (int i = 0; i < workers.length; i++) {
-            workers[i] = new ImageWorker();
+            workers[i] = new NotesImageWorker();
         }
     }
     
