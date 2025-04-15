@@ -44,7 +44,6 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
 
     @Override
     public void exit() {
-        MainWindow.exit();
     }
 
     @Override

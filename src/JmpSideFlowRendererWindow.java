@@ -1,8 +1,11 @@
 import java.awt.BorderLayout;
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ComponentEvent;
@@ -12,16 +15,18 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.Sequence;
-import javax.swing.JPanel;
+import javax.swing.JFrame;
 import javax.swing.TransferHandler;
-import javax.swing.border.EmptyBorder;
 
-import drawLib.gui.DrawLibFrame;
 import function.Utility;
 import jlib.core.IDataManager;
 import jlib.core.ISystemManager;
@@ -30,18 +35,25 @@ import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 
-public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseListener, MouseMotionListener, MouseWheelListener {
+public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
     
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 780;
-    public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
-    public static final int DEFAULT_1MEAS_WIDTH = 128 * 2;
-    public static final int DEFAULT_TICK_MEAS = 2;
+    public static final int WINDOW_FIXED_FPS = 120; //画面の限界FPS値
+    public static final long DELAY_NANO = 1000000000L / WINDOW_FIXED_FPS;
+    
+    public static final int DEFAULT_1MEAS_WIDTH = 280;//128 * 3;
+    public static final int DEFAULT_TICK_MEAS = 1;
     
     // 次のページにフリップするpx数
     private static final int NEXT_FLIP_COUNT = 0;
-
-    private JPanel contentPane;
+    
+    private Canvas canvas;
+    private BufferStrategy strategy;
+    
+    private int frameCount = 0;
+    private long startTime = System.nanoTime();
+    private int fps = 0;
 
     // 現在のレイアウト設定
     public LayoutConfig layout = CLASSIC_LAYOUT;
@@ -99,6 +111,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
 
     public Color[] notesColor = null;
     public Color[] cursorColor = null;
+    public Color[] hitEffectColor = null;
 
     private int topMidiNumber = 110;
     private int leftMeas = 0;
@@ -124,13 +137,18 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         this.setTransferHandler(new DropFileHandler());
         this.setTitle("JMP Side Flow Renderer");
         setBounds(10, 10, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
-        contentPane = new JPanel();
-        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-        contentPane.setLayout(new BorderLayout(0, 0));
-        setContentPane(contentPane);
+        setLayout(new BorderLayout(0, 0));
+        
+        canvas = new Canvas();
+        canvas.setBackground(Color.BLACK);
+        
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        
+        contentPane.add(canvas, BorderLayout.CENTER);
 
-        addMouseListener(this);
-        addMouseWheelListener(this);
+        canvas.addMouseListener(this);
+        canvas.addMouseWheelListener(this);
         this.addComponentListener(new ComponentListener() {
 
             @Override
@@ -139,11 +157,6 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
 
             @Override
             public void componentResized(ComponentEvent e) {
-                try {
-                    repaintAndFlipScreen();
-                }
-                catch (Exception ex) {
-                }
             }
 
             @Override
@@ -165,32 +178,83 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 1.0)), //
                 Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.7)), //
         };//
+        hitEffectColor = new Color[8];
+        for (int i=0; i<hitEffectColor.length; i++) {
+            hitEffectColor[i] = new Color(
+                    layout.cursorMainColor.getRed(), 
+                    layout.cursorMainColor.getGreen(), 
+                    layout.cursorMainColor.getBlue(), 
+                    255 - (255 / hitEffectColor.length) * i
+                    );
+        }
     }
-
+    
+    ScheduledExecutorService scheduler = null;
+    
     @Override
-    public void repaintAndFlipScreen() {
-        super.repaintAndFlipScreen();
+    public void setVisible(boolean b) {
+        super.setVisible(b);
+        
+        if (b) {
+            canvas.requestFocusInWindow();
+            canvas.createBufferStrategy(2); // ダブルバッファリング
+            strategy = canvas.getBufferStrategy();
+            
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+            scheduler.scheduleAtFixedRate(this, 1000, DELAY_NANO, TimeUnit.NANOSECONDS);
+            
+            imageWorkerMgr.start();
+        }
+        else {
+            scheduler.shutdown();
+            try {
+                scheduler.awaitTermination(1, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e) {
+                // TODO 自動生成された catch ブロック
+                e.printStackTrace();
+            }
+            
+            imageWorkerMgr.stop();
+        }
+    }
+    
+    public int getFPS() {
+        return fps;
+    }
+    
+    @Override
+    public void run() {
+        render();
+        
+        frameCount++;
+        long currentTime = System.nanoTime();
+        long elapsedTime = currentTime - startTime;
+        
+        if (elapsedTime >= TimeUnit.SECONDS.toNanos(1)) {
+            fps = frameCount;
+            frameCount = 0;
+            startTime = currentTime;
+        }
+        
+    }
+    
+    protected void render() {
+        Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
+        try {
+            paintDisplay(g);
+        } finally {
+            // Graphics オブジェクトの解放
+            g.dispose();
+        }
+        
+        strategy.show();
     }
 
     public void init() {
         imageWorkerMgr = new ImagerWorkerManager();
-        imageWorkerMgr.init();
-
-        initPane();
-        setFixedFPS(WINDOW_FIXED_FPS);
     }
 
-    public void exit() {
-        try {
-            exitPane();
-
-            imageWorkerMgr.exit();
-        }
-        catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-    
     public void loadFile() {
         setLeftMeas(0);
         calcDispMeasCount();
@@ -209,10 +273,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
     
     private BufferedImage orgScreenImage = null;
     private Graphics orgScreenGraphic = null;
-
-    @Override
-    public void paint(Graphics g) {
-        // super.paint(g);
+    public void paintDisplay(Graphics g) {
         
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
@@ -245,8 +306,8 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
         
         
         if (layout.isVisibleMonitorStr == true) {
-            int sx = 20;
-            int sy = 50;
+            int sx = 15;
+            int sy = 15;
             int sh = 16;
             int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
             String infoStr = "";
@@ -313,11 +374,6 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
             }
 */
         }
-    }
-
-    @Override
-    public void paintComponents(Graphics g) {
-        // super.paintComponents(g);
     }
 
     private void calcDispMeasCount() {
@@ -392,35 +448,31 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                 g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
                 
                 // 衝突エフェクト描画
+                /*
                 if (layout.tickBarPosition > 0) {
                     INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
                     g.setColor(layout.prBackColor);
-                    //g.fillRect(0, 0, layout.keyWidth, getOrgHeight());
                     int keyHeight = getMeasCellHeight();
                     int keyCount = (127 - getTopMidiNumber());
                     int topOffset = (keyHeight * keyCount);
-                    int effWidth = 100;
+                    int effWidth = 64;
                     int effHeight = keyHeight;
-                    int effMarginCnt = 16;
-                    int effMargin = 255 / effMarginCnt;
+                    int w = effWidth / hitEffectColor.length;
                     for (int i = 0; i < 128; i++) {
-                        int x = 0;
                         int y = topOffset + (keyHeight * i);
                         int midiNo = 127 - i;
                         for (int ch=0; ch<16; ch++) {
                             if (true == notesMonitor.isNoteOn(ch, midiNo)) {
-                                for (int j=1; j<=effMarginCnt; j++) {
-                                    int w = effWidth / 15;
-                                    //g.setColor(new Color(notesColor[ch].getRed(), notesColor[ch].getGreen(), notesColor[ch].getBlue(), 255 - effMargin * j));
-                                    g.setColor(new Color(layout.cursorMainColor.getRed(), layout.cursorMainColor.getGreen(), layout.cursorMainColor.getBlue(), 255 - effMargin * j));
-                                    //g.fillRect(x + (layout.keyWidth - j * w), y, w, effHeight);
-                                    g.fillRect(x + layout.tickBarPosition + ((j - 1) * w), y, w, effHeight);
+                                for (int j=0; j<hitEffectColor.length; j++) {
+                                    g.setColor(hitEffectColor[j]);
+                                    g.fillRect(layout.tickBarPosition + (j * w), y, w, effHeight);
                                 }
                                 break;
                             }
                         }
                     }
                 }
+                */
                 
                 /* Tickbar描画 */
                 if (sequence != null) {

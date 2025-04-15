@@ -6,26 +6,29 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 
+import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.MidiUtility;
 
-class ImageWorker extends Thread {
+class ImageWorker implements Runnable {
     public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
     public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
     
     private int leftMeasTh = 0;
     private BufferedImage offScreenNotesImage;
     private Graphics2D offScreenNotesGraphic;
-    private boolean isRunnable = true;
     private boolean isWait = true;
     private boolean doClear = true;
     
@@ -33,11 +36,11 @@ class ImageWorker extends Thread {
     private MidiEvent[][] noteOnEvents = null;
     private List<Integer> pbBufferX = null;
     private List<Integer> pbBufferY = null;
+    
+    ScheduledExecutorService scheduler = null;
 
     public ImageWorker() {
         super();
-        this.setPriority(MAX_PRIORITY);
-        isRunnable = true;
         
         noteOnEvents = new MidiEvent[16][];
         for (int i=0; i<16; i++) {
@@ -45,6 +48,15 @@ class ImageWorker extends Thread {
         }
         pbBufferX = new ArrayList<Integer>();
         pbBufferY = new ArrayList<Integer>();
+    }
+    
+    public void start() {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(this, 0, 200, TimeUnit.MILLISECONDS);
+    }
+    
+    public void stop() {
+        scheduler.shutdown();
     }
     
     public boolean isWait() {
@@ -95,57 +107,38 @@ class ImageWorker extends Thread {
 
     @Override
     public void run() {
-        while (isRunnable) {
-            try {
-                if (JmpSideFlowRenderer.MainWindow.isVisible() == false) {
-                    offScreenNotesImage = null; //イメージオブジェクトのメモリを解放 
-                    Thread.sleep(200);
-                    continue;
-                }
-
-                IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-                Sequence sequence =  midiUnit.getSequence();
-                if (sequence == null) {
-                    Thread.sleep(100);
-                    continue;
-                }
-                
-                if (offScreenNotesImage == null) {
-                    // ノーツ画像
-                    offScreenNotesImage = new BufferedImage(getImageWidth(), getImageHeight(), BufferedImage.TYPE_INT_ARGB);
-                    offScreenNotesGraphic = offScreenNotesImage.createGraphics();
-                    indexCache = null;
-                    doClear = true;
-                    setWait(false);
-                }
-                
-                if (isWait == true) {
-                    Thread.sleep(100);
-                    continue;
-                }
-
-                if (doClear == true) {
-                    Graphics2D g2d = offScreenNotesImage.createGraphics();
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-                    g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
-                    g2d.dispose();
-                    doClear = false;
-                }
-
-                // オフスクリーン
-                //paintBorder(offScreenNotesGraphic);
-                paintNotes(offScreenNotesGraphic, getLeftMeasTh());
-                isWait = true;
-            }
-            catch (InterruptedException e) {
-                // TODO 自動生成された catch ブロック
-                e.printStackTrace();
-            }
+        boolean isLoading  = JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING);
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        Sequence sequence =  midiUnit.getSequence();
+        if (JmpSideFlowRenderer.MainWindow.isVisible() == false) {
+            offScreenNotesImage = null; //イメージオブジェクトのメモリを解放 
+            return;
         }
-    }
+        else if (sequence == null || isWait == true || isLoading == true) {
+            return;
+        }
+        
+        if (offScreenNotesImage == null) {
+            // ノーツ画像
+            offScreenNotesImage = new BufferedImage(getImageWidth(), getImageHeight(), BufferedImage.TYPE_INT_ARGB);
+            offScreenNotesGraphic = offScreenNotesImage.createGraphics();
+            indexCache = null;
+            doClear = true;
+            setWait(false);
+        }
 
-    public void exit() {
-        isRunnable = false;
+        if (doClear == true) {
+            Graphics2D g2d = offScreenNotesImage.createGraphics();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+            g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
+            g2d.dispose();
+            doClear = false;
+        }
+
+        // オフスクリーン
+        //paintBorder(offScreenNotesGraphic);
+        paintNotes(offScreenNotesGraphic, getLeftMeasTh());
+        isWait = true;
     }
 
     public int getLeftMeasTh() {

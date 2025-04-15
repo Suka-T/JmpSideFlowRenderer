@@ -20,17 +20,16 @@ class ImagerWorkerManager {
         return workers[index];
     }
 
-    public void init() {
+    public void start() {
         for (ImageWorker w : workers) {
             w.start();
         }
         currentWorkerIndex = 0;
     }
     
-    public void exit() throws InterruptedException {
+    public void stop() {
         for (ImageWorker w : workers) {
-            w.exit();
-            w.join();
+            w.stop();
         }
     }
     
