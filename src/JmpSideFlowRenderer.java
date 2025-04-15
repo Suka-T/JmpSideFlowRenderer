@@ -1,5 +1,7 @@
 import java.io.File;
 
+import javax.swing.SwingUtilities;
+
 import jlib.core.JMPCoreAccessor;
 import jlib.player.IPlayerListener;
 import jlib.plugin.ISupportExtensionConstraints;
@@ -22,9 +24,11 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     public void initialize() {
         createExtensions();
 
-        MainWindow = new JmpSideFlowRendererWindow();
-
-        MainWindow.init();
+        SwingUtilities.invokeLater(() -> {
+            MainWindow = new JmpSideFlowRendererWindow();
+            MainWindow.init();
+        });
+        
     }
 
     private void createExtensions() {

@@ -1,4 +1,5 @@
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -97,6 +98,7 @@ class ImageWorker extends Thread {
         while (isRunnable) {
             try {
                 if (JmpSideFlowRenderer.MainWindow.isVisible() == false) {
+                    offScreenNotesImage = null; //イメージオブジェクトのメモリを解放 
                     Thread.sleep(200);
                     continue;
                 }
@@ -223,7 +225,8 @@ class ImageWorker extends Thread {
             }
         }
         
-        for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
+        //for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
+        for (int trkIndex = 0; trkIndex < notesMonitor.getNumOfTrack(); trkIndex++) {
             for (int i=0; i<16; i++) {
                 for (int j=0; j<128; j++) {
                     noteOnEvents[i][j] = null;
@@ -348,11 +351,16 @@ class ImageWorker extends Thread {
                                 pastY = pbBufferY.get(pbBufferY.size() - 1);
                             }
 
-                            g.setColor(pbColor);
-                            g.drawLine(pastX, pastY, x, pastY);
-                            g.drawLine(x, pastY, x, y);
+                            float lineWidth = 2.0f;
+                            Graphics2D g2 = (Graphics2D) g;
+                            BasicStroke stroke = new BasicStroke(lineWidth);
+                            g2.setStroke(stroke);
+                            g2.setColor(pbColor);
+                            g2.drawLine(pastX, pastY, x, pastY);
+                            g2.drawLine(x, pastY, x, y);
                             pbBufferX.add(x);
                             pbBufferY.add(y);
+                            g2.setStroke(new BasicStroke(1.0f));
                         }
                     }
                 }

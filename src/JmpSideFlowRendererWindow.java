@@ -70,7 +70,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
                     Utility.convertCodeToHtmlColor("#FFFFFF"), // カーソルカラー
                     Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    false, // PBの表示
+                    true, // PBの表示
                     DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
                     true, // 縦線表示
                     false, // 横線表示
@@ -242,6 +242,7 @@ public class JmpSideFlowRendererWindow extends DrawLibFrame implements MouseList
                     0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
                     null);
         }
+        
         
         if (layout.isVisibleMonitorStr == true) {
             int sx = 20;
