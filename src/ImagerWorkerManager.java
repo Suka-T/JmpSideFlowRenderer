@@ -5,10 +5,10 @@ class ImagerWorkerManager {
     private ImageWorker[] workers = null;
     private int currentWorkerIndex = 0;
     
-    public ImagerWorkerManager() {
-        workers = new NotesImageWorker[3];
+    public ImagerWorkerManager(int width, int height) {
+        workers = new NotesImageWorker[2];
         for (int i = 0; i < workers.length; i++) {
-            workers[i] = new NotesImageWorker();
+            workers[i] = new NotesImageWorker(width, height, 100);
         }
     }
     
@@ -21,6 +21,7 @@ class ImagerWorkerManager {
     }
 
     public void start() {
+        //effectWorker.start();
         for (ImageWorker w : workers) {
             w.start();
         }
@@ -28,6 +29,7 @@ class ImagerWorkerManager {
     }
     
     public void stop() {
+        //effectWorker.stop();
         for (ImageWorker w : workers) {
             w.stop();
         }
@@ -35,7 +37,7 @@ class ImagerWorkerManager {
     
     public Image getNotesImage() {
         if (workers[currentWorkerIndex].isWait() == true) {
-            return workers[currentWorkerIndex].getNotesImage();
+            return workers[currentWorkerIndex].getImage();
         }
         return null;
     }

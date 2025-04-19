@@ -8,20 +8,27 @@ import java.util.concurrent.TimeUnit;
 
 class ImageWorker implements Runnable {
     private int leftMeasTh = 0;
-    private BufferedImage offScreenImage;
-    private Graphics2D offScreenGraphic;
+    protected BufferedImage offScreenImage;
+    protected Graphics2D offScreenGraphic;
     private boolean isWait = true;
     private boolean doClear = true;
+    private int width = 0;
+    private int height = 0;
+    private long cyclicMills;
     
     private ScheduledExecutorService scheduler = null;
 
-    public ImageWorker() {
+    public ImageWorker(int width, int height, long cyclicMills) {
         super();
+        
+        this.width = width;
+        this.height = height;
+        this.cyclicMills = cyclicMills;
     }
     
     public void start() {
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this, 0, 200, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this, 0, this.cyclicMills, TimeUnit.MILLISECONDS);
     }
     
     public void stop() {
@@ -44,19 +51,19 @@ class ImageWorker implements Runnable {
         offScreenImage = null;
     }
 
-    public BufferedImage getNotesImage() {
+    public BufferedImage getImage() {
         return offScreenImage;
     }
     
     public int getWidth() {
-        return JmpSideFlowRenderer.MainWindow.getOrgWidth();
+        return this.width;
     }
     public int getHeight() {
-        return JmpSideFlowRenderer.MainWindow.getOrgHeight();
+        return this.height;
     }
     
     public int getImageWidth() {
-        return (getWidth() + JmpSideFlowRenderer.MainWindow.layout.tickBarPosition) * 3;
+        return getWidth();
     }
     public int getImageHeight() {
         return getHeight();

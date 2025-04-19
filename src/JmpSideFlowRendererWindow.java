@@ -71,7 +71,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                     false, // 縦線表示
                     false, // 横線表示
                     true, // ノーツを3Dデザイン 
-                    false // 情報表示 
+                    true // 情報表示 
             );
 
     //
@@ -252,7 +252,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     }
 
     public void init() {
-        imageWorkerMgr = new ImagerWorkerManager();
+        imageWorkerMgr = new ImagerWorkerManager(getOrgWidth(), getOrgHeight());
     }
 
     public void loadFile() {
@@ -294,6 +294,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         }
         
         paintMain(orgScreenGraphic);
+        
         if (getWidth() == getOrgWidth() && getHeight() == getOrgHeight()) {
             g.drawImage(orgScreenImage, 0, 0, null);
         }
@@ -320,8 +321,8 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                     JMPCoreAccessor.getSoundManager().getLengthSecond() % 60
                     );
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
-            g.setColor(backStrColor);
-            g.drawString(infoStr, sx + 1, sy + 1);
+//            g.setColor(backStrColor);
+//            g.drawString(infoStr, sx + 1, sy + 1);
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
             sy += sh;
@@ -361,7 +362,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             g.setColor(topStrColor);
             g.drawString(infoStr, sx, sy);
             sy += sh;
-/*
+
             for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
                 int dbx = sx + (i * 15);
                 if (imageWorkerMgr.getWorker(i).isWait() == true) {
@@ -372,7 +373,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 }
                 g.fillRect(dbx, sy + 5, 10, 10);
             }
-*/
+
         }
     }
 
@@ -448,31 +449,29 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
                 
                 // 衝突エフェクト描画
-                /*
-                if (layout.tickBarPosition > 0) {
+                if (JmpSideFlowRenderer.MainWindow.layout.tickBarPosition > 0) {
                     INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-                    g.setColor(layout.prBackColor);
-                    int keyHeight = getMeasCellHeight();
-                    int keyCount = (127 - getTopMidiNumber());
+                    g.setColor(JmpSideFlowRenderer.MainWindow.layout.prBackColor);
+                    int keyHeight = JmpSideFlowRenderer.MainWindow.getMeasCellHeight();
+                    int keyCount = (127 - JmpSideFlowRenderer.MainWindow.getTopMidiNumber());
                     int topOffset = (keyHeight * keyCount);
                     int effWidth = 64;
                     int effHeight = keyHeight;
-                    int w = effWidth / hitEffectColor.length;
+                    int w = effWidth / JmpSideFlowRenderer.MainWindow.hitEffectColor.length;
                     for (int i = 0; i < 128; i++) {
                         int y = topOffset + (keyHeight * i);
                         int midiNo = 127 - i;
                         for (int ch=0; ch<16; ch++) {
                             if (true == notesMonitor.isNoteOn(ch, midiNo)) {
-                                for (int j=0; j<hitEffectColor.length; j++) {
-                                    g.setColor(hitEffectColor[j]);
-                                    g.fillRect(layout.tickBarPosition + (j * w), y, w, effHeight);
+                                for (int j=0; j<JmpSideFlowRenderer.MainWindow.hitEffectColor.length; j++) {
+                                    g.setColor(JmpSideFlowRenderer.MainWindow.hitEffectColor[j]);
+                                    g.fillRect(JmpSideFlowRenderer.MainWindow.layout.tickBarPosition + (j * w), y, w, effHeight);
                                 }
                                 break;
                             }
                         }
                     }
                 }
-                */
                 
                 /* Tickbar描画 */
                 if (sequence != null) {
@@ -493,7 +492,6 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             stringHeight = fm.getHeight();
             g.drawString(str, (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
         }
-
     }
 
     public void resetPage() {

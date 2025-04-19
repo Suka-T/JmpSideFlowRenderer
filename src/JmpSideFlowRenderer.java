@@ -1,4 +1,5 @@
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
@@ -23,11 +24,26 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     @Override
     public void initialize() {
         createExtensions();
+        
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
-        SwingUtilities.invokeLater(() -> {
-            MainWindow = new JmpSideFlowRendererWindow();
-            MainWindow.init();
-        });
+                @Override
+                public void run() {
+                    MainWindow = new JmpSideFlowRendererWindow();
+                    MainWindow.init();
+                }
+            });
+        }
+        catch (InvocationTargetException | InterruptedException e) {
+            // TODO 自動生成された catch ブロック
+            e.printStackTrace();
+        }
+
+//        SwingUtilities.invokeLater(() -> {
+//            MainWindow = new JmpSideFlowRendererWindow();
+//            MainWindow.init();
+//        });
         
     }
 

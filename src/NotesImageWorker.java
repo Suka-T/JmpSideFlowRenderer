@@ -26,8 +26,8 @@ class NotesImageWorker extends ImageWorker {
     private List<Integer> pbBufferX = null;
     private List<Integer> pbBufferY = null;
     
-    public NotesImageWorker() {
-        super();
+    public NotesImageWorker(int width, int height, long cyclicMills) {
+        super(width, height, cyclicMills);
         
         noteOnEvents = new MidiEvent[16][];
         for (int i=0; i<16; i++) {
@@ -65,6 +65,11 @@ class NotesImageWorker extends ImageWorker {
     public void disposeImage() {
         indexCache = null;
         super.disposeImage();
+    }
+    
+    @Override
+    public int getImageWidth() {
+        return (getWidth() + JmpSideFlowRenderer.MainWindow.layout.tickBarPosition) * 3;
     }
 
     @Override
