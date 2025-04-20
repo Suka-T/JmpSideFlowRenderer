@@ -2,53 +2,46 @@ import java.awt.AlphaComposite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 class ImageWorker implements Runnable {
     private int leftMeasTh = 0;
     protected BufferedImage offScreenImage;
     protected Graphics2D offScreenGraphic;
-    private boolean isWait = true;
-    private boolean doClear = true;
+    private boolean isExec = false;
     private int width = 0;
     private int height = 0;
-    private long cyclicMills;
-    
-    private ScheduledExecutorService scheduler = null;
+    private ExecutorService service = null;
 
-    public ImageWorker(int width, int height, long cyclicMills) {
+    public ImageWorker(int width, int height) {
         super();
         
         this.width = width;
         this.height = height;
-        this.cyclicMills = cyclicMills;
     }
     
     public void start() {
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(this, 0, this.cyclicMills, TimeUnit.MILLISECONDS);
     }
     
     public void stop() {
-        scheduler.shutdown();
     }
     
-    public boolean isWait() {
-        return isWait;
+    public void makeImage() {
+        service = Executors.newSingleThreadExecutor();
+        service.execute(this);
+        isExec = true;
     }
-    public synchronized void setWait(boolean wait) {
-        isWait = wait;
-    }
-
-    public void clearImage() {
-        //notesImage = null;
-        doClear = true;
+    
+    public boolean isExec() {
+        return isExec;
     }
     
     public void disposeImage() {
-        offScreenImage = null;
+        if (offScreenImage != null) {
+            offScreenImage.flush();
+            offScreenImage = null;
+        }
     }
 
     public BufferedImage getImage() {
@@ -73,11 +66,9 @@ class ImageWorker implements Runnable {
     public void run() {
         if (JmpSideFlowRenderer.MainWindow.isVisible() == false) {
             if (offScreenImage != null) {
-                offScreenImage = null; //イメージオブジェクトのメモリを解放
+                //イメージオブジェクトのメモリを解放
+                disposeImage();
             }
-            return;
-        }
-        else if (isWait == true) {
             return;
         }
         
@@ -85,21 +76,17 @@ class ImageWorker implements Runnable {
             // ノーツ画像
             offScreenImage = new BufferedImage(getImageWidth(), getImageHeight(), BufferedImage.TYPE_INT_ARGB);
             offScreenGraphic = offScreenImage.createGraphics();
-            doClear = true;
-            setWait(false);
         }
 
-        if (doClear == true) {
-            Graphics2D g2d = offScreenImage.createGraphics();
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-            g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
-            g2d.dispose();
-            doClear = false;
-        }
+        Graphics2D g2d = offScreenImage.createGraphics();
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+        g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
+        g2d.dispose();
 
         // オフスクリーン描画 
         paintImage(offScreenGraphic);
-        isWait = true;
+        
+        isExec = false;
     }
 
     public int getLeftMeasTh() {
@@ -108,10 +95,6 @@ class ImageWorker implements Runnable {
 
     public void setLeftMeasTh(int leftMeasTh) {
         this.leftMeasTh = leftMeasTh;
-    }
-    
-    public void makeImage() {
-        isWait = false;
     }
     
     protected void paintImage(Graphics g) {

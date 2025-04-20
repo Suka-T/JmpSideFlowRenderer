@@ -6,9 +6,9 @@ class ImagerWorkerManager {
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager(int width, int height) {
-        workers = new NotesImageWorker[2];
+        workers = new NotesImageWorker[3];
         for (int i = 0; i < workers.length; i++) {
-            workers[i] = new NotesImageWorker(width, height, 100);
+            workers[i] = new NotesImageWorker(width, height);
         }
     }
     
@@ -21,7 +21,6 @@ class ImagerWorkerManager {
     }
 
     public void start() {
-        //effectWorker.start();
         for (ImageWorker w : workers) {
             w.start();
         }
@@ -29,14 +28,13 @@ class ImagerWorkerManager {
     }
     
     public void stop() {
-        //effectWorker.stop();
         for (ImageWorker w : workers) {
             w.stop();
         }
     }
     
     public Image getNotesImage() {
-        if (workers[currentWorkerIndex].isWait() == true) {
+        if (workers[currentWorkerIndex].isExec() == false) {
             return workers[currentWorkerIndex].getImage();
         }
         return null;
@@ -56,7 +54,6 @@ class ImagerWorkerManager {
     }
     
     public void flipPage(int newLeftMeas, int dispMeas, int flipCount) {
-        workers[currentWorkerIndex].clearImage();
         ImageWorker nextNotesThread = workers[currentWorkerIndex]; 
         //int[] nextCache = workers[currentWorkerIndex].getTrackCache();
         

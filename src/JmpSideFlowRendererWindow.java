@@ -1,3 +1,4 @@
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -28,9 +29,7 @@ import javax.swing.JFrame;
 import javax.swing.TransferHandler;
 
 import function.Utility;
-import jlib.core.IDataManager;
 import jlib.core.ISystemManager;
-import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
@@ -38,12 +37,9 @@ import jlib.midi.INotesMonitor;
 public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
     
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
-    public static final int DEFAULT_WINDOW_HEIGHT = 780;
-    public static final int WINDOW_FIXED_FPS = 120; //画面の限界FPS値
+    public static final int DEFAULT_WINDOW_HEIGHT = 768;
+    public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
     public static final long DELAY_NANO = 1000000000L / WINDOW_FIXED_FPS;
-    
-    public static final int DEFAULT_1MEAS_WIDTH = 280;//128 * 3;
-    public static final int DEFAULT_TICK_MEAS = 1;
     
     // 次のページにフリップするpx数
     private static final int NEXT_FLIP_COUNT = 0;
@@ -55,72 +51,18 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     private long startTime = System.nanoTime();
     private int fps = 0;
 
-    // 現在のレイアウト設定
-    public LayoutConfig layout = CLASSIC_LAYOUT;
-
-    //
-    // =##= カスタム(デバッグ用) =##=
-    public static final LayoutConfig _DEBUG_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    new Color(0, 255, 0), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    true, // PBの表示
-                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // TickBar位置
-                    false, // 縦線表示
-                    false, // 横線表示
-                    true, // ノーツを3Dデザイン 
-                    true // 情報表示 
-            );
-
-    //
-    // =##= クラシック =##=
-    public static final LayoutConfig CLASSIC_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 40), // ボーダーカラー
-                    Utility.convertCodeToHtmlColor("#FFFFFF"), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    true, // PBの表示
-                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
-                    true, // 縦線表示
-                    false, // 横線表示
-                    true, // ノーツを3Dデザイン
-                    true // 情報表示 
-            );
-
-    //
-    // =##= ライトテーマ =##=
-    public static final LayoutConfig LIGHT_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    Utility.convertCodeToHtmlColor("#c0c0c0"), // 背景カラー
-                    Utility.convertHighLightColor(Utility.convertCodeToHtmlColor("#c0c0c0"), 40), // ボーダーカラー
-                    Utility.convertCodeToHtmlColor("#000000"), // カーソルカラー
-                    Utility.convertHighLightColor(new Color(0, 0, 0), 140), // ピッチベンドベースカラー
-                    false, // PBの表示
-                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
-                    true, // 縦線表示
-                    false, // 横線表示
-                    true, // ノーツを3Dデザイン
-                    true // 情報表示
-            );
-    //
-
     private ImagerWorkerManager imageWorkerMgr = null;
+    
+    private int orgDispWidth = 1280;
+    private int orgDispHeight = 768;
 
-    public Color[] notesColor = null;
-    public Color[] cursorColor = null;
-    public Color[] hitEffectColor = null;
-
-    private int topMidiNumber = 110;
     private int leftMeas = 0;
     private int zeroPosition = 0;
-    private int measCellWidth = DEFAULT_1MEAS_WIDTH;
-    private int measCellHeight = 5;
+    private int measCellWidth = LayoutManager.DEFAULT_1MEAS_WIDTH;
+    private int measCellHeight = orgDispHeight / 128 - 1;//5;
     private int dispMeasCount = 0;
-    private int orgDispWidth = 1280;
-    private int orgDispHeight = 780;
+    
+    private int topMidiNumber = 128 - ((orgDispHeight - (measCellHeight * 128)) / measCellHeight) / 2;//110;
     
     public int getOrgWidth() {
         return  orgDispWidth;
@@ -167,26 +109,8 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             public void componentHidden(ComponentEvent e) {
             }
         });
-
-        ISystemManager sm = JMPCoreAccessor.getSystemManager();
-        notesColor = new Color[16];
-        for (int i = 0; i < 16; i++) {
-            String key = String.format("ch_color_%d", (i + 1));
-            notesColor[i] = Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key));
-        }
-        cursorColor = new Color[] { //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 1.0)), //
-                Utility.convertColorAlpha(layout.cursorMainColor, (int) (255 * 0.7)), //
-        };//
-        hitEffectColor = new Color[8];
-        for (int i=0; i<hitEffectColor.length; i++) {
-            hitEffectColor[i] = new Color(
-                    layout.cursorMainColor.getRed(), 
-                    layout.cursorMainColor.getGreen(), 
-                    layout.cursorMainColor.getBlue(), 
-                    255 - (255 / hitEffectColor.length) * i
-                    );
-        }
+        
+        LayoutManager.getInstance().initialize();
     }
     
     ScheduledExecutorService scheduler = null;
@@ -274,43 +198,26 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     private BufferedImage orgScreenImage = null;
     private Graphics orgScreenGraphic = null;
     public void paintDisplay(Graphics g) {
-        
-        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        
         if (orgScreenImage == null) {
             orgScreenImage = new BufferedImage(getOrgWidth(), getOrgHeight(), BufferedImage.TYPE_INT_ARGB);
             orgScreenGraphic = orgScreenImage.createGraphics();
         }
         
-        /* ノーツ描画 */
-        Sequence sequence = midiUnit.getSequence();
-        if (sequence != null) {
-            // フリップ
-            calcDispMeasCount();
-            if (midiUnit.isRunning() == true) {
-                flipPage();
-            }
-        }
-        
         paintMain(orgScreenGraphic);
         
-        if (getWidth() == getOrgWidth() && getHeight() == getOrgHeight()) {
-            g.drawImage(orgScreenImage, 0, 0, null);
-        }
-        else {
-            g.drawImage(orgScreenImage, 
-                    0, 0, getWidth(), getHeight(), 
-                    0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
-                    null);
-        }
+        g.drawImage(orgScreenImage, 
+                0, 0, getWidth(), getHeight(), 
+                0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
+                null);
         
-        
-        if (layout.isVisibleMonitorStr == true) {
-            int sx = 15;
+        if (LayoutManager.getInstance().isVisibleInfoStr() == true) {
+            int sx = 10;
             int sy = 20;
             int sh = 16;
-            int tc = (layout.prBackColor.getRed() + layout.prBackColor.getGreen() + layout.prBackColor.getBlue()) / 3;
+            Color bgColor = LayoutManager.getInstance().getBackColor();
+            int tc = (bgColor.getRed() + bgColor.getGreen() + bgColor.getBlue()) / 3;
+            INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+            IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
             String infoStr = "";
             Color backStrColor = tc >= 128 ? Color.WHITE : Color.BLACK;
             Color topStrColor = tc < 128 ? Color.WHITE : Color.BLACK;
@@ -365,7 +272,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
 
             for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
                 int dbx = sx + (i * 15);
-                if (imageWorkerMgr.getWorker(i).isWait() == true) {
+                if (imageWorkerMgr.getWorker(i).isExec() == false) {
                     g.setColor(Color.GREEN);
                 }
                 else {
@@ -393,7 +300,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
 
     private int cnt = 0;
     private void paintMain(Graphics g) {
-        g.setColor(layout.prBackColor);
+        g.setColor(LayoutManager.getInstance().getBackColor());
         g.fillRect(0, 0, getOrgWidth(), getOrgHeight());
         
         if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true) {
@@ -426,7 +333,15 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         
         /* ノーツ描画 */
         Sequence sequence = midiUnit.getSequence();
+        
+        /* ノーツ描画 */
         if (sequence != null) {
+            // フリップ
+            calcDispMeasCount();
+            if (midiUnit.isRunning() == true) {
+                flipPage();
+            }
+            
             if (imageWorkerMgr.getNotesImage() == null) {
                 // 描画が追いついていない 
                 g.setColor(Color.WHITE);
@@ -448,34 +363,40 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 int tickX = (int) ((double)relPosTick * (double)getMeasCellWidth() / (double)sequence.getResolution()); 
                 g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
                 
-                // 衝突エフェクト描画
-                if (JmpSideFlowRenderer.MainWindow.layout.tickBarPosition > 0) {
+                int tickBarPosition = LayoutManager.getInstance().getTickBarPosition();
+                if (tickBarPosition > 0) {
+                    // 衝突エフェクト描画
+                    Color[] hitEffectColor = LayoutManager.getInstance().getHitEffectColors();
                     INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-                    g.setColor(JmpSideFlowRenderer.MainWindow.layout.prBackColor);
+                    g.setColor(LayoutManager.getInstance().getBackColor());
                     int keyHeight = JmpSideFlowRenderer.MainWindow.getMeasCellHeight();
                     int keyCount = (127 - JmpSideFlowRenderer.MainWindow.getTopMidiNumber());
                     int topOffset = (keyHeight * keyCount);
                     int effWidth = 64;
                     int effHeight = keyHeight;
-                    int w = effWidth / JmpSideFlowRenderer.MainWindow.hitEffectColor.length;
+                    int w = effWidth / hitEffectColor.length;
                     for (int i = 0; i < 128; i++) {
                         int y = topOffset + (keyHeight * i);
                         int midiNo = 127 - i;
                         for (int ch=0; ch<16; ch++) {
                             if (true == notesMonitor.isNoteOn(ch, midiNo)) {
-                                for (int j=0; j<JmpSideFlowRenderer.MainWindow.hitEffectColor.length; j++) {
-                                    g.setColor(JmpSideFlowRenderer.MainWindow.hitEffectColor[j]);
-                                    g.fillRect(JmpSideFlowRenderer.MainWindow.layout.tickBarPosition + (j * w), y, w, effHeight);
+                                for (int j=0; j<hitEffectColor.length; j++) {
+                                    g.setColor(hitEffectColor[j]);
+                                    g.fillRect(tickBarPosition + (j * w), y, w, effHeight);
                                 }
                                 break;
                             }
                         }
                     }
-                }
-                
-                /* Tickbar描画 */
-                if (sequence != null) {
-                    paintTickPosition(g, layout.tickBarPosition);
+                    
+                    /* Tickbar描画 */
+                    Graphics2D g2d = (Graphics2D)g;
+                    g2d.setColor(LayoutManager.getInstance().getCursorEffectColor());
+                    g2d.setStroke(new BasicStroke(3));
+                    g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
+                    g2d.setColor(LayoutManager.getInstance().getCursorColor());
+                    g2d.setStroke(new BasicStroke(1));
+                    g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
                 }
             }
         }
@@ -514,28 +435,6 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             setLeftMeas(-(flipLine));
             offsetLeftMeas = getLeftMeas();
             imageWorkerMgr.flipPage(offsetLeftMeas, dispMeasCount, NEXT_FLIP_COUNT);
-        }
-    }
-
-    public void paintTickPosition(Graphics g, int x) {
-        if (layout.tickBarPosition <= 0) {
-            return;
-        }
-
-        if (g == null) {
-            // nullPointer防止
-            return;
-        }
-
-        int len = cursorColor.length;
-        if (JMPCoreAccessor.getSoundManager().isPlay() == false) {
-            len = 1;
-        }
-
-        for (int i = 0; i < len; i++) {
-            g.setColor(cursorColor[i]);
-            g.drawLine(x - i, 0, x - i, getOrgHeight());
-            g.drawLine(x + i, 0, x + i, getOrgHeight());
         }
     }
 
@@ -578,6 +477,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 JMPCoreAccessor.getSoundManager().stop();
             }
             else {
+                JMPCoreAccessor.getSoundManager().initPosition();
                 JMPCoreAccessor.getSoundManager().play();
             }
         }
@@ -727,18 +627,11 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
                     JMPCoreAccessor.getFileManager().loadDualFile(path2, path1);
                 }
-                
-                String midiOutName = JMPCoreAccessor.getDataManager().getConfigParam(IDataManager.CFG_KEY_MIDIOUT);
-                System.out.println(midiOutName);
-                if (midiOutName.equalsIgnoreCase("NULL") == false) {
-                    // 同時再生時にmidiOutを指定する用途は少ない？ 
-                    JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
-                }
             }
             else {
                 String path = files.get(0).getPath();
                 if (Utility.checkExtensions(path, JmpSideFlowRenderer.Extensions.split(",")) == true) {
-                    JMPCoreAccessor.getFileManager().loadFileToPlay(path);
+                    JMPCoreAccessor.getFileManager().loadFile(path);
                 }
             }
         }

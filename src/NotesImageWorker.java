@@ -10,7 +10,6 @@ import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 
-import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.IMidiUnit;
@@ -26,8 +25,8 @@ class NotesImageWorker extends ImageWorker {
     private List<Integer> pbBufferX = null;
     private List<Integer> pbBufferY = null;
     
-    public NotesImageWorker(int width, int height, long cyclicMills) {
-        super(width, height, cyclicMills);
+    public NotesImageWorker(int width, int height) {
+        super(width, height);
         
         noteOnEvents = new MidiEvent[16][];
         for (int i=0; i<16; i++) {
@@ -51,10 +50,9 @@ class NotesImageWorker extends ImageWorker {
     
     @Override
     public void run() {
-        boolean isLoading  = JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING);
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         Sequence sequence =  midiUnit.getSequence();
-        if (sequence == null || isLoading == true) {
+        if (sequence == null) {
             return;
         }
         
@@ -69,7 +67,7 @@ class NotesImageWorker extends ImageWorker {
     
     @Override
     public int getImageWidth() {
-        return (getWidth() + JmpSideFlowRenderer.MainWindow.layout.tickBarPosition) * 3;
+        return (getWidth() + LayoutManager.getInstance().getTickBarPosition()) * 3;
     }
 
     @Override
@@ -86,10 +84,10 @@ class NotesImageWorker extends ImageWorker {
     
     protected void paintBorder(Graphics g) {
         JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
-        g.setColor(mainWindow.layout.prBorderColor);
+        g.setColor(LayoutManager.getInstance().getBorderColor());
         int x = mainWindow.getZeroPosition();
         int y = 0;
-        if (mainWindow.layout.isVisibleHorizonBorder == true) {
+        if (LayoutManager.getInstance().isVisibleHorizonBorder() == true) {
             while (y <= getImageHeight()) {
                 g.drawLine(x, y, x + getImageWidth(), y);
                 y += mainWindow.getMeasCellHeight();
@@ -98,7 +96,7 @@ class NotesImageWorker extends ImageWorker {
         x = mainWindow.getZeroPosition();
         y = 0;
         while (x <= getImageWidth()) {
-            if (mainWindow.layout.isVisibleVerticalBorder == true) {
+            if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
                 g.drawLine(x, y, x, y + getImageHeight());
             }
             x += mainWindow.getMeasCellWidth();
@@ -118,7 +116,7 @@ class NotesImageWorker extends ImageWorker {
         paintBorder(g);
 
         // 上部位置の調整
-        int offsetCoordX = mainWindow.layout.tickBarPosition;
+        int offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
         int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
         int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
         int totalMeasCount = (int)((double)mainWindow.getDispMeasCount() * 2.0);
@@ -133,8 +131,8 @@ class NotesImageWorker extends ImageWorker {
         int pbMaxHeight = 100;
         int pbCenterY = (pbMaxHeight / 2) + 100;
 
-        if (mainWindow.layout.isVisiblePb == true) {
-            g.setColor(mainWindow.layout.pbBaseLineColor);
+        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
+            g.setColor(LayoutManager.getInstance().getPitchbendColor());
             g.drawLine(0, pbCenterY, getImageWidth(), pbCenterY);
         }
         
@@ -148,6 +146,17 @@ class NotesImageWorker extends ImageWorker {
                 indexCache[i] = 0;
             }
         }
+        
+        Color[] notesColor = LayoutManager.getInstance().getNotesColors();
+        int startMeas = 0;
+        int startOffset = 0;
+        int x = 0;                        
+        int y = 0;
+        int width = 0;
+        int height = 0;
+        int channel = 0;
+        int data1 = 0;
+        //int data2 = 0;
         
         //for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
         for (int trkIndex = 0; trkIndex < notesMonitor.getNumOfTrack(); trkIndex++) {
@@ -205,9 +214,9 @@ class NotesImageWorker extends ImageWorker {
                 if (message instanceof ShortMessage) {
                     // ShortMessage解析
                     ShortMessage sMes = (ShortMessage) message;
-                    int channel = sMes.getChannel();
-                    int data1 = sMes.getData1();
-                    //int data2 = sMes.getData2();
+                    channel = sMes.getChannel();
+                    data1 = sMes.getData1();
+                    //data2 = sMes.getData2();
                     
                     if (toolkit.isNoteOn(sMes) == true) {
                         // Note ON
@@ -232,42 +241,40 @@ class NotesImageWorker extends ImageWorker {
                         }
 
                         // 描画開始
-                        int startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
-                        int startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
-                        int x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
-                        int y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
+                        startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
+                        startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
+                        x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+                        y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
 
-                        int width = (int) (mainWindow.getMeasCellWidth()
+                        width = (int) (mainWindow.getMeasCellWidth()
                                 * (double) (endEvent.getTick() - startEvent.getTick()) / sequence.getResolution());
-                        int height = mainWindow.getMeasCellHeight();
+                        height = mainWindow.getMeasCellHeight();
                         
                         // ノーマルカラー
                         if (width > 2) {
-                            g.setColor(mainWindow.notesColor[channel]);
-                            g.fill3DRect(x, y, width, height, mainWindow.layout.isNotes3D);
+                            g.setColor(notesColor[channel]);
+                            g.fill3DRect(x, y, width, height, LayoutManager.getInstance().isNotes3D());
                         }
                         else {
-                            g.setColor(mainWindow.notesColor[channel]);
-                            g.fill3DRect(x, y, 2, height, mainWindow.layout.isNotes3D);
+                            g.setColor(notesColor[channel]);
+                            g.fill3DRect(x, y, 2, height, LayoutManager.getInstance().isNotes3D());
                         }
                     }
                     else if (toolkit.isPitchBend(sMes) == true) {
-                        if (mainWindow.layout.isVisiblePb == true) {
+                        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
                             /* ピッチベンド描画 */
-                            int pbValue = MidiUtility.convertPitchBendValue(sMes);
-                            pbValue -= 8192;
-
+                            int pbValue = MidiUtility.convertPitchBendValue(sMes) - 8192;
                             int signed = (pbValue < 0) ? -1 : 1;
 
-                            int startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution()) + leftMeas;
-                            int startOffset = (int) ((double) event.getTick() % (double) sequence.getResolution());
-                            int x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+                            startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution()) + leftMeas;
+                            startOffset = (int) ((double) event.getTick() % (double) sequence.getResolution());
+                            x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
 
                             int absPbValue = signed * pbValue;
-                            int y = pbCenterY - (signed * ((absPbValue * pbMaxHeight) / 8192));
+                            y = pbCenterY - (signed * ((absPbValue * pbMaxHeight) / 8192));
 
                             // PB描画
-                            Color pbColor = mainWindow.notesColor[channel];
+                            Color pbColor = notesColor[channel];
                             int pastX = 0;
                             int pastY = pbCenterY;
                             if (pbBufferX.isEmpty() == false) {
