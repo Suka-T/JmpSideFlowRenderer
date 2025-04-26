@@ -1,4 +1,8 @@
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.GraphicsConfiguration;
+import java.awt.Transparency;
+import java.awt.image.VolatileImage;
 
 import function.Utility;
 import jlib.core.ISystemManager;
@@ -6,17 +10,19 @@ import jlib.core.JMPCoreAccessor;
 
 public class LayoutManager {
     
-    public static final int DEFAULT_1MEAS_WIDTH = 320;//128 * 3;
+    public static final int DEFAULT_1MEAS_WIDTH = 420;//320;
     public static final int DEFAULT_TICK_MEAS = 1;
     
     private Color[] notesColor = null;
     private Color cursorColor = null;
     private Color cursorEffeColor = null;
-    private Color[] hitEffectColor = null;
+    private Color hitEffectColor = null;
     
     private Color bgColor = null;
     private Color bdColor = null;
     private Color pbColor = null;
+    
+    private Canvas rootCanvas = null;
 
     // 現在のレイアウト設定
     private LayoutConfig layout = CLASSIC_LAYOUT;
@@ -25,10 +31,10 @@ public class LayoutManager {
     // =##= クラシック =##=
     public static final LayoutConfig CLASSIC_LAYOUT = //
             LayoutConfig.createConfig(//
-                    new Color(0, 0, 0), // 背景カラー
-                    new Color(210, 210, 210),
-                    Utility.convertCodeToHtmlColor("#FFFFFF"), // カーソルカラー
-                    new Color(210, 210, 210),
+                    "#000000", // 背景カラー
+                    "#969696", // 枠線カラー 
+                    "#ffffff", // カーソルカラー
+                    "#969696", // PBベースカラー 
                     false, // PBの表示
                     DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // TickBar位置
                     true, // 縦線表示
@@ -41,10 +47,10 @@ public class LayoutManager {
     // =##= ライトテーマ =##=
     public static final LayoutConfig LIGHT_LAYOUT = //
             LayoutConfig.createConfig(//
-                    new Color(240, 240, 240), // 背景カラー
-                    new Color(40, 40, 40),
-                    Utility.convertCodeToHtmlColor("#000000"), // カーソルカラー
-                    new Color(40, 40, 40),
+                    "#dcdcdc", // 背景カラー
+                    "#969696", // 枠線カラー 
+                    "#5f9ea0", // カーソルカラー
+                    "#969696", // PBベースカラー 
                     false, // PBの表示
                     DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
                     true, // 縦線表示
@@ -61,28 +67,28 @@ public class LayoutManager {
         return instance;
     }
     
-    public void initialize() {
+    public VolatileImage createLayerImage(int width, int height) {
+        GraphicsConfiguration gc = rootCanvas.getGraphicsConfiguration();
+        return gc.createCompatibleVolatileImage(width, height, Transparency.OPAQUE);
+    }
+    
+    public void initialize(Canvas canvas) {
+        rootCanvas = canvas;
         ISystemManager sm = JMPCoreAccessor.getSystemManager();
         notesColor = new Color[16];
         for (int i = 0; i < 16; i++) {
             String key = String.format("ch_color_%d", (i + 1));
             notesColor[i] = Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key));
         }
-        hitEffectColor = new Color[8];
-        for (int i=0; i<hitEffectColor.length; i++) {
-            hitEffectColor[i] = new Color(
-                    layout.cursorMainColor.getRed(), 
-                    layout.cursorMainColor.getGreen(), 
-                    layout.cursorMainColor.getBlue(), 
-                    255 - (255 / hitEffectColor.length) * i
-                    );
-        }
-        cursorColor = layout.cursorMainColor;
+        
+        cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
+        
+        hitEffectColor = Color.WHITE;
         cursorEffeColor = new Color(cursorColor.getRed(), cursorColor.getBlue(), cursorColor.getGreen(), 180);
         
-        bgColor = layout.prBackColor;
-        bdColor = layout.prBorderColor;
-        pbColor = layout.pbBaseLineColor;
+        bgColor = Utility.convertCodeToHtmlColor(layout.prBackColor);
+        bdColor = Utility.convertCodeToHtmlColor(layout.prBorderColor);
+        pbColor = Utility.convertCodeToHtmlColor(layout.pbBaseLineColor);
     }
     
     public Color[] getNotesColors() {
@@ -93,7 +99,7 @@ public class LayoutManager {
         return notesColor[index];
     }
     
-    public Color[] getHitEffectColors() {
+    public Color getHitEffectColor() {
         return hitEffectColor;
     }
     

@@ -2,7 +2,7 @@ import java.awt.Image;
 
 class ImagerWorkerManager {
     
-    private ImageWorker[] workers = null;
+    private volatile ImageWorker[] workers = null;
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager(int width, int height) {

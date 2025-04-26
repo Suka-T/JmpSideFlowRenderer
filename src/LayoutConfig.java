@@ -1,14 +1,10 @@
-import java.awt.Color;
-
-import function.Utility;
-
 public class LayoutConfig {
 
     public static LayoutConfig createConfig(//
-            Color prBackColor, //
-            Color prBorderColor, //
-            Color cursorMainColor, //
-            Color pbBaseLineColor, //
+            String prBackColor, //
+            String prBorderColor, //
+            String cursorMainColor, //
+            String pbBaseLineColor, //
             boolean isVisiblePb, //
             int tickBarPosition, //
             boolean isVisibleVerticalBorder, //
@@ -30,10 +26,10 @@ public class LayoutConfig {
         return instance;
     }
 
-    public Color prBackColor = new Color(255, 220, 255);
-    public Color prBorderColor = Utility.convertHighLightColor(prBackColor, -100);
-    public Color cursorMainColor = Utility.convertHighLightColor(prBackColor, -100);
-    public Color pbBaseLineColor = Utility.convertHighLightColor(prBackColor, -140);
+    public String prBackColor = "#000000";
+    public String prBorderColor = "#969696";
+    public String cursorMainColor = "#FFFFFF";
+    public String pbBaseLineColor = "#969696";
     // 表示設定
     public boolean isVisiblePb = true;
     public int tickBarPosition = 60;

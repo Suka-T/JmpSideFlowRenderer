@@ -25,26 +25,26 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     public void initialize() {
         createExtensions();
         
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    MainWindow = new JmpSideFlowRendererWindow();
-                    MainWindow.init();
-                }
-            });
+        if (SwingUtilities.isEventDispatchThread()) {
+            MainWindow = new JmpSideFlowRendererWindow();
+            MainWindow.init();
         }
-        catch (InvocationTargetException | InterruptedException e) {
-            // TODO 自動生成された catch ブロック
-            e.printStackTrace();
+        else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+    
+                    @Override
+                    public void run() {
+                        MainWindow = new JmpSideFlowRendererWindow();
+                        MainWindow.init();
+                    }
+                });
+            }
+            catch (InvocationTargetException | InterruptedException e) {
+                // TODO 自動生成された catch ブロック
+                e.printStackTrace();
+            }
         }
-
-//        SwingUtilities.invokeLater(() -> {
-//            MainWindow = new JmpSideFlowRendererWindow();
-//            MainWindow.init();
-//        });
-        
     }
 
     private void createExtensions() {

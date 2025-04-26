@@ -2,6 +2,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +68,7 @@ class NotesImageWorker extends ImageWorker {
     
     @Override
     public int getImageWidth() {
-        return (getWidth() + LayoutManager.getInstance().getTickBarPosition()) * 3;
+        return (getWidth() * 3) + LayoutManager.getInstance().getTickBarPosition();
     }
 
     @Override
@@ -104,6 +105,7 @@ class NotesImageWorker extends ImageWorker {
     }
 
     protected void paintNotes(Graphics g, int leftMeas) {
+        Graphics2D g2d = (Graphics2D)g;
         JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
@@ -112,6 +114,8 @@ class NotesImageWorker extends ImageWorker {
         if (sequence == null) {
             return;
         }
+        
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         
         paintBorder(g);
 
@@ -251,14 +255,12 @@ class NotesImageWorker extends ImageWorker {
                         height = mainWindow.getMeasCellHeight();
                         
                         // ノーマルカラー
-                        if (width > 2) {
-                            g.setColor(notesColor[channel]);
-                            g.fill3DRect(x, y, width, height, LayoutManager.getInstance().isNotes3D());
+                        if (width < 2) {
+                            width = 2;
                         }
-                        else {
-                            g.setColor(notesColor[channel]);
-                            g.fill3DRect(x, y, 2, height, LayoutManager.getInstance().isNotes3D());
-                        }
+                        g2d.setColor(notesColor[channel]);
+                        g2d.fill3DRect(x, y, width, height, LayoutManager.getInstance().isNotes3D());
+                        
                     }
                     else if (toolkit.isPitchBend(sMes) == true) {
                         if (LayoutManager.getInstance().isVisiblePbLine() == true) {
