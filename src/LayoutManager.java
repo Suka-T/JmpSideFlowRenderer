@@ -3,6 +3,10 @@ import java.awt.Color;
 import java.awt.GraphicsConfiguration;
 import java.awt.Transparency;
 import java.awt.image.VolatileImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import function.Utility;
 import jlib.core.ISystemManager;
@@ -13,10 +17,9 @@ public class LayoutManager {
     public static final int DEFAULT_1MEAS_WIDTH = 420;//320;
     public static final int DEFAULT_TICK_MEAS = 1;
     
-    private Color[] notesColor = null;
+    private List<Color> notesColor = null;
     private Color cursorColor = null;
     private Color cursorEffeColor = null;
-    private Color hitEffectColor = null;
     
     private Color bgColor = null;
     private Color bdColor = null;
@@ -25,40 +28,7 @@ public class LayoutManager {
     private Canvas rootCanvas = null;
 
     // 現在のレイアウト設定
-    private LayoutConfig layout = CLASSIC_LAYOUT;
-
-    //
-    // =##= クラシック =##=
-    public static final LayoutConfig CLASSIC_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    "#000000", // 背景カラー
-                    "#969696", // 枠線カラー 
-                    "#ffffff", // カーソルカラー
-                    "#969696", // PBベースカラー 
-                    false, // PBの表示
-                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // TickBar位置
-                    true, // 縦線表示
-                    false, // 横線表示
-                    true, // ノーツを3Dデザイン
-                    true // 情報表示 
-            );
-
-    //
-    // =##= ライトテーマ =##=
-    public static final LayoutConfig LIGHT_LAYOUT = //
-            LayoutConfig.createConfig(//
-                    "#dcdcdc", // 背景カラー
-                    "#969696", // 枠線カラー 
-                    "#5f9ea0", // カーソルカラー
-                    "#969696", // PBベースカラー 
-                    false, // PBの表示
-                    DEFAULT_1MEAS_WIDTH * DEFAULT_TICK_MEAS, // // TickBar位置
-                    true, // 縦線表示
-                    false, // 横線表示
-                    true, // ノーツを3Dデザイン
-                    true // 情報表示
-            );
-    //
+    private LayoutConfig layout = new LayoutConfig();
     
     private static LayoutManager instance = new LayoutManager();
     private LayoutManager() {}
@@ -74,33 +44,50 @@ public class LayoutManager {
     
     public void initialize(Canvas canvas) {
         rootCanvas = canvas;
+        
+        notesColor = new ArrayList<Color>();
         ISystemManager sm = JMPCoreAccessor.getSystemManager();
-        notesColor = new Color[16];
-        for (int i = 0; i < 16; i++) {
-            String key = String.format("ch_color_%d", (i + 1));
-            notesColor[i] = Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key));
+        
+        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.None || layout.notesColorCodes.isEmpty() == true) {
+	        for (int i = 0; i < 16; i++) {
+	            String key = String.format("ch_color_%d", (i + 1));
+	            notesColor.add(Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key)));
+	        }
+        }
+        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.Asign) {
+        	for (String s : layout.notesColorCodes) {
+        		notesColor.add(Utility.convertCodeToHtmlColor(s));
+        	}
         }
         
         cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
-        
-        hitEffectColor = Color.WHITE;
-        cursorEffeColor = new Color(cursorColor.getRed(), cursorColor.getBlue(), cursorColor.getGreen(), 180);
+        cursorEffeColor = Utility.convertCodeToHtmlColor(layout.cursorEffeColor);
         
         bgColor = Utility.convertCodeToHtmlColor(layout.prBackColor);
         bdColor = Utility.convertCodeToHtmlColor(layout.prBorderColor);
         pbColor = Utility.convertCodeToHtmlColor(layout.pbBaseLineColor);
     }
     
-    public Color[] getNotesColors() {
-        return notesColor;
+    public void write(File f) throws IOException {
+        layout.write(f);
+    }
+    
+    public void read(File f) throws IOException {
+    	if (f.exists() == true) {
+    		layout.read(f);
+    	}
     }
     
     public Color getNotesColor(int index) {
-        return notesColor[index];
+    	return notesColor.get(index % notesColor.size());
+    }
+
+    public LayoutConfig.ECursorType getCursorType() {
+        return layout.cursorType;
     }
     
-    public Color getHitEffectColor() {
-        return hitEffectColor;
+    public LayoutConfig.EColorRule getColorRule() {
+        return layout.colorRule;
     }
     
     public Color getCursorColor() {
@@ -139,8 +126,8 @@ public class LayoutManager {
         return layout.isVisiblePb;
     }
     
-    public boolean isNotes3D() {
-        return layout.isNotes3D;
+    public LayoutConfig.ENotesDesign getNotesDesign() {
+        return layout.notessDesign;
     }
     
     public int getTickBarPosition() {

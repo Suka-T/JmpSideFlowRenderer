@@ -1,8 +1,12 @@
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.swing.SwingUtilities;
 
+import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.player.IPlayerListener;
 import jlib.plugin.ISupportExtensionConstraints;
@@ -24,6 +28,22 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     @Override
     public void initialize() {
         createExtensions();
+        
+        Path folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_DATA_DIR, this));
+        Path fullPath = folder.resolve("renderer.properties");
+        try {
+        	SystemProperties.getInstance().read(new File(fullPath.toString()));
+        	
+        	String layoutFilename = SystemProperties.getInstance().getLayoutFile();
+            if (!layoutFilename.contains(".")) {
+            	layoutFilename += ".layout";
+            }
+        	fullPath = folder.resolve(layoutFilename);
+            LayoutManager.getInstance().read(new File(fullPath.toString()));
+        }
+        catch (IOException e1) {
+            e1.printStackTrace();
+        }
         
         if (SwingUtilities.isEventDispatchThread()) {
             MainWindow = new JmpSideFlowRendererWindow();

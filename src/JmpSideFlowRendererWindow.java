@@ -485,7 +485,6 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             g.setColor(topStrColor);
             g.drawString(sb.toString(), sx, sy);
             sy += sh;
-/*
             for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
                 int dbx = sx + (i * 15);
                 if (imageWorkerMgr.getWorker(i).isExec() == false) {
@@ -496,7 +495,6 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                 }
                 g.fillRect(dbx, sy + 5, 10, 10);
             }
-*/
         }
     }
 
@@ -541,40 +539,53 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         
         int tickBarPosition = LayoutManager.getInstance().getTickBarPosition();
         if (tickBarPosition > 0) {
-            Color[] notesColor = LayoutManager.getInstance().getNotesColors();
-            
-            /*  Keyboard */
-            int keyFocus = 0;
-            Color keyBgColor;
-            for (int i=0; i<aHakken.length; i++) {
-                keyFocus = notesMonitor.getTopNoteOnChannel(aHakken[i].midiNo);
-                if (keyFocus != -1) {
-                    keyBgColor = notesColor[keyFocus];
+            int effOrgX = tickBarPosition;
+            if (LayoutManager.getInstance().getCursorType() == LayoutConfig.ECursorType.Keyboard) {
+                /*  Keyboard */
+                int keyFocus = 0;
+                Color keyBgColor;
+                for (int i=0; i<aHakken.length; i++) {
+                	if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                		keyFocus = notesMonitor.getTopNoteOnChannel(aHakken[i].midiNo);
+                	}
+                	else if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Track) {
+                		keyFocus = notesMonitor.getTopNoteOnTrack(aHakken[i].midiNo);
+                	}
+                	
+                    if (keyFocus != -1) {
+                        keyBgColor = LayoutManager.getInstance().getNotesColor(keyFocus);
+                    }
+                    else {
+                        keyBgColor = Color.WHITE;
+                    }
+                    
+                    g.setColor(keyBgColor);
+                    g.fill3DRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height, true);
+                    g.setColor(Color.LIGHT_GRAY);
+                    g.drawRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height);
                 }
-                else {
-                    keyBgColor = Color.WHITE;
+                for (int i=0; i<aKokken.length; i++) {
+                	if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                		keyFocus = notesMonitor.getTopNoteOnChannel(aKokken[i].midiNo);
+                	}
+                	else if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Track) {
+                		keyFocus = notesMonitor.getTopNoteOnTrack(aKokken[i].midiNo);
+                	}
+                	
+                    if (keyFocus != -1) {
+                        keyBgColor = LayoutManager.getInstance().getNotesColor(keyFocus);
+                    }
+                    else {
+                        keyBgColor = Color.BLACK;
+                    }
+                    
+                    g.setColor(keyBgColor);
+                    g.fill3DRect(aKokken[i].x, aKokken[i].y, aKokken[i].width, aKokken[i].height, true);
                 }
-                
-                g.setColor(keyBgColor);
-                g.fill3DRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height, true);
-                g.setColor(Color.LIGHT_GRAY);
-                g.drawRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height);
-            }
-            for (int i=0; i<aKokken.length; i++) {
-                keyFocus = notesMonitor.getTopNoteOnChannel(aKokken[i].midiNo);
-                if (keyFocus != -1) {
-                    keyBgColor = notesColor[keyFocus];
-                }
-                else {
-                    keyBgColor = Color.BLACK;
-                }
-                
-                g.setColor(keyBgColor);
-                g.fill3DRect(aKokken[i].x, aKokken[i].y, aKokken[i].width, aKokken[i].height, true);
             }
             
             /* 衝突エフェクト描画 */
-            Color hitEffectColor = LayoutManager.getInstance().getHitEffectColor();
+            Color hitEffectColor = LayoutManager.getInstance().getCursorEffectColor();
             g.setColor(LayoutManager.getInstance().getBackColor());
             int keyHeight = getMeasCellHeight();
             int effWidth = 4;
@@ -582,13 +593,21 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             g.setColor(hitEffectColor);
             for (int i = 0; i < 128; i++) {
                 int midiNo = 127 - i;
-                if (notesMonitor.getTopNoteOnChannel(midiNo) != -1) {
-                    effx = tickBarPosition  - aHakken[0].width;;
+                boolean isFocus = false;
+                if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                	isFocus = (notesMonitor.getTopNoteOnChannel(midiNo) != -1) ? true : false;
+                }
+                else {
+                	isFocus = (notesMonitor.getTopNoteOnTrack(midiNo) != -1) ? true : false;
+                }
+                
+                if (isFocus == true) {
+                    effx = effOrgX;
                     for (int j = 0; j < 10; j++) {
                         float alpha = 1.0f - j * 0.1f;
                         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                        g2d.fillRect(effx - effWidth, hitEffectPosY[i], effWidth, keyHeight);
-                        effx -= effWidth;
+                        g2d.fillRect(effx, hitEffectPosY[i], effWidth, keyHeight);
+                        effx += effWidth;
                     }
                     g2d.setComposite(AlphaComposite.SrcOver);
                 }
@@ -597,7 +616,9 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             /* Tickbar描画 */
             Color csrColor = LayoutManager.getInstance().getCursorColor();
             g2d.setColor(csrColor);
+            g2d.drawLine(tickBarPosition - 1, 0, tickBarPosition - 1, getOrgHeight());
             g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
+            g2d.drawLine(tickBarPosition + 1, 0, tickBarPosition + 1, getOrgHeight());
         }
     }
 

@@ -6,7 +6,7 @@ class ImagerWorkerManager {
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager(int width, int height) {
-        workers = new NotesImageWorker[3];
+        workers = new NotesImageWorker[SystemProperties.getInstance().getWorkerNum()];
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new NotesImageWorker(width, height);
         }
