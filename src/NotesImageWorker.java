@@ -24,8 +24,9 @@ class NotesImageWorker extends ImageWorker {
     public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
     public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
     
-    private AlphaComposite bdAlpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+    private AlphaComposite bdAlpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f);
     private BasicStroke normalStroke = new BasicStroke(1.0f);
+    private BasicStroke notesBdStrokeHold = new BasicStroke(0.2f);
     private BasicStroke notesBdStroke = new BasicStroke(1.5f);
     private BasicStroke bdStroke = new BasicStroke(2.0f);
     private BasicStroke pbStroke = new BasicStroke(2.0f);
@@ -93,7 +94,7 @@ class NotesImageWorker extends ImageWorker {
     
     protected void paintBorder(Graphics g) {
     	Graphics2D g2d = (Graphics2D)g;
-        JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
+        RendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
         g.setColor(LayoutManager.getInstance().getBorderColor());
         g2d.setStroke(bdStroke);
         int x = mainWindow.getZeroPosition();
@@ -163,7 +164,7 @@ class NotesImageWorker extends ImageWorker {
     
     protected void paintNotes(Graphics g, int leftMeas) {
         Graphics2D g2d = (Graphics2D)g;
-        JmpSideFlowRendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
+        RendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
         Sequence sequence = midiUnit.getSequence();
@@ -327,8 +328,8 @@ class NotesImageWorker extends ImageWorker {
                             
                             if (LayoutManager.getInstance().getNotesDesign() == LayoutConfig.ENotesDesign.Normal) {
 	                            g2d.fill3DRect(x, y, width, height, true);
-	                            g2d.setStroke(notesBdStroke);
-	                            g2d.setColor(LayoutManager.getInstance().getBackColor());
+	                            g2d.setStroke(notesBdStrokeHold);
+	                            g2d.setColor(Color.black/* LayoutManager.getInstance().getBackColor()*/);
 	                            g2d.setComposite(bdAlpha);
 	                            g2d.drawRect(x, y, width, height);
 	                            g2d.setComposite(AlphaComposite.SrcOver);

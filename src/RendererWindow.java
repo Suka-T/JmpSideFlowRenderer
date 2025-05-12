@@ -35,7 +35,7 @@ import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 
-public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
+public class RendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
     
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 768;
@@ -92,7 +92,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     /**
      * Create the frame.
      */
-    public JmpSideFlowRendererWindow() {
+    public RendererWindow() {
         this.setTransferHandler(new DropFileHandler());
         this.setTitle("JMP Side Flow Renderer");
         setLocation(10, 10);
@@ -485,15 +485,18 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             g.setColor(topStrColor);
             g.drawString(sb.toString(), sx, sy);
             sy += sh;
-            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
-                int dbx = sx + (i * 15);
-                if (imageWorkerMgr.getWorker(i).isExec() == false) {
-                    g.setColor(Color.GREEN);
-                }
-                else {
-                    g.setColor(Color.RED);
-                }
-                g.fillRect(dbx, sy + 5, 10, 10);
+            
+            if (SystemProperties.getInstance().isDebugMode() == true) {
+	            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
+	                int dbx = sx + (i * 15);
+	                if (imageWorkerMgr.getWorker(i).isExec() == false) {
+	                    g.setColor(Color.GREEN);
+	                }
+	                else {
+	                    g.setColor(Color.RED);
+	                }
+	                g.fillRect(dbx, sy + 5, 10, 10);
+	            }
             }
         }
     }

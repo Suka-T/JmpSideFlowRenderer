@@ -7,14 +7,15 @@ import java.util.Properties;
 public class SystemProperties {
 	
 	public static final String SYSP_IMAGEWORKER_COUNT = "renderer.worker.count";
+	public static final String SYSP_DEBUGMODE = "renderer.debugmode";
 	public static final String SYSP_LAYOUT_FILE = "layout.file";
 	
 	private int workerNum = 3;
 	private String layoutFile = "";
+	private boolean debugMode = false;
 
     private static SystemProperties instance = new SystemProperties();
     private SystemProperties() {}
-    
     public static SystemProperties getInstance() {
         return instance;
     }
@@ -25,7 +26,6 @@ public class SystemProperties {
         
         String str = null;
         str = props.getProperty(SYSP_IMAGEWORKER_COUNT);
-        
         if (str != null) {
         	try {
         		workerNum = Integer.parseInt(str);
@@ -33,6 +33,16 @@ public class SystemProperties {
         		workerNum = 3;
 			}
         }
+        
+        str = props.getProperty(SYSP_DEBUGMODE);
+        if (str != null) {
+        	try {
+        		debugMode = Boolean.parseBoolean(str);
+        	} catch (Exception e) {
+        		debugMode = false;
+			}
+        }
+        
         str = props.getProperty(SYSP_LAYOUT_FILE);
         if (str != null) {
         	try {
@@ -49,5 +59,9 @@ public class SystemProperties {
 
 	public String getLayoutFile() {
 		return layoutFile;
+	}
+
+	public boolean isDebugMode() {
+		return debugMode;
 	}
 }
