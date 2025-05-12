@@ -1,6 +1,9 @@
+package image;
 import java.awt.Image;
 
-class ImagerWorkerManager {
+import plg.SystemProperties;
+
+public class ImagerWorkerManager {
     
     private volatile ImageWorker[] workers = null;
     private int currentWorkerIndex = 0;

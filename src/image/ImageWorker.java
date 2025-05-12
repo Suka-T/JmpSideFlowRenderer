@@ -1,3 +1,4 @@
+package image;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -6,7 +7,10 @@ import java.awt.image.VolatileImage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class ImageWorker implements Runnable {
+import layout.LayoutManager;
+import plg.JmpSideFlowRenderer;
+
+public class ImageWorker implements Runnable {
     private int leftMeasTh = 0;
     protected volatile VolatileImage offScreenImage;
     protected Graphics2D offScreenGraphic;

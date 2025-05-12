@@ -1,3 +1,4 @@
+package plg;
 public class JmpSideFlowRenderer extends AbstractRenderPlugin {
 
     public static void main(String[] args) {

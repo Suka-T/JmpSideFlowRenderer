@@ -1,3 +1,4 @@
+package image;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -13,12 +14,16 @@ import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 
+import gui.RendererWindow;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.LightweightShortMessage;
 import jlib.midi.MidiByte;
 import jlib.midi.MidiUtility;
+import layout.LayoutConfig;
+import layout.LayoutManager;
+import plg.JmpSideFlowRenderer;
 
 class NotesImageWorker extends ImageWorker {
     public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;

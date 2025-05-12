@@ -1,3 +1,4 @@
+package gui;
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -30,10 +31,15 @@ import javax.swing.JFrame;
 import javax.swing.TransferHandler;
 
 import function.Utility;
+import image.ImagerWorkerManager;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
+import layout.LayoutConfig;
+import layout.LayoutManager;
+import plg.JmpSideFlowRenderer;
+import plg.SystemProperties;
 
 public class RendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
     

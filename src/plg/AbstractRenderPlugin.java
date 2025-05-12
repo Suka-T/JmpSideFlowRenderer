@@ -1,3 +1,4 @@
+package plg;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -6,11 +7,13 @@ import java.nio.file.Paths;
 
 import javax.swing.SwingUtilities;
 
+import gui.RendererWindow;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.player.IPlayerListener;
 import jlib.plugin.ISupportExtensionConstraints;
 import jlib.plugin.JMidiPlugin;
+import layout.LayoutManager;
 
 public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener, ISupportExtensionConstraints {
 
