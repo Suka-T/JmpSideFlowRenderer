@@ -1,11 +1,9 @@
 package image;
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,16 +21,14 @@ import jlib.midi.MidiByte;
 import jlib.midi.MidiUtility;
 import layout.LayoutConfig;
 import layout.LayoutManager;
+import layout.parts.NotesPainter;
 import plg.JmpSideFlowRenderer;
 
 class NotesImageWorker extends ImageWorker {
     public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
     public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
     
-    private AlphaComposite bdAlpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f);
     private BasicStroke normalStroke = new BasicStroke(1.0f);
-    private BasicStroke notesBdStrokeHold = new BasicStroke(0.2f);
-    private BasicStroke notesBdStroke = new BasicStroke(1.5f);
     private BasicStroke bdStroke = new BasicStroke(2.0f);
     private BasicStroke pbStroke = new BasicStroke(2.0f);
     private int[] indexCache = null;
@@ -164,8 +160,6 @@ class NotesImageWorker extends ImageWorker {
         return toolkit.isPitchBend(mes);
 */
     }
-
-    private final RoundRectangle2D.Float roundRect = new RoundRectangle2D.Float();
     
     protected void paintNotes(Graphics g, int leftMeas) {
         Graphics2D g2d = (Graphics2D)g;
@@ -177,13 +171,10 @@ class NotesImageWorker extends ImageWorker {
             return;
         }
         
-        if (LayoutManager.getInstance().getNotesDesign() == LayoutConfig.ENotesDesign.Arc) {
-        	// Arc系のNotesはエイリアス必須 
-        	g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        }
-        else {
-        	g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        }
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        
+        NotesPainter.Context nContext = LayoutManager.getInstance().getNotesPainter().newContext();
+        nContext.g = g;
         
         paintBorder(g);
 
@@ -313,46 +304,25 @@ class NotesImageWorker extends ImageWorker {
                             // 描画開始
                             startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
                             startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
-                            x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
-                            y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
+                            nContext.x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+                            nContext.y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
     
-                            width = (int) (mainWindow.getMeasCellWidth()
+                            nContext.w = (int) (mainWindow.getMeasCellWidth()
                                     * (double) (endEvent.getTick() - startEvent.getTick()) / sequence.getResolution());
-                            height = mainWindow.getMeasCellHeight();
+                            nContext.h = mainWindow.getMeasCellHeight();
                             
-                            if (width < 2) {
-                                width = 2;
+                            if (nContext.w < 2) {
+                            	nContext.w = 2;
                             }
                             
                             if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
-                            	g2d.setColor(LayoutManager.getInstance().getNotesColor(channel));
+                            	nContext.bgColor = LayoutManager.getInstance().getNotesColor(channel);
                             }
                             else {
-                            	g2d.setColor(LayoutManager.getInstance().getNotesColor(trackIndex));
+                            	nContext.bgColor = LayoutManager.getInstance().getNotesColor(trackIndex);
                             }
-                            
-                            if (LayoutManager.getInstance().getNotesDesign() == LayoutConfig.ENotesDesign.Normal) {
-	                            g2d.fill3DRect(x, y, width, height, true);
-	                            g2d.setStroke(notesBdStrokeHold);
-	                            g2d.setColor(Color.black/* LayoutManager.getInstance().getBackColor()*/);
-	                            g2d.setComposite(bdAlpha);
-	                            g2d.drawRect(x, y, width, height);
-	                            g2d.setComposite(AlphaComposite.SrcOver);
-	                            g2d.setStroke(normalStroke);
-                            }
-                            else if (LayoutManager.getInstance().getNotesDesign() == LayoutConfig.ENotesDesign.Arc) {
-	                            roundRect.setRoundRect((float)x, (float)y, (float)width, (float)height, 6.0f, 6.0f);
-	                            g2d.fill(roundRect);
-                            	g2d.setStroke(notesBdStroke);
-	                            g2d.setColor(LayoutManager.getInstance().getBackColor());
-	                            g2d.setComposite(bdAlpha);
-	                            g2d.draw(roundRect);
-	                            g2d.setComposite(AlphaComposite.SrcOver);
-	                            g2d.setStroke(normalStroke);
-                            }
-                            else {
-                            	g2d.fillRect(x, y, width, height);
-                            }
+                            nContext.bdColor = LayoutManager.getInstance().getBackColor();
+                            LayoutManager.getInstance().getNotesPainter().paintNotes(nContext);
                         }
                     }
                     else if (isPitchbend(sMes) == true) {

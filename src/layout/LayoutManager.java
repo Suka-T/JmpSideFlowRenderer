@@ -12,6 +12,10 @@ import java.util.List;
 import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
+import layout.parts.ArcNotesPainter;
+import layout.parts.FlatNotesPainter;
+import layout.parts.NormalNotesPainter;
+import layout.parts.NotesPainter;
 
 public class LayoutManager {
     
@@ -27,6 +31,8 @@ public class LayoutManager {
     private Color pbColor = null;
     
     private Canvas rootCanvas = null;
+    
+    private NotesPainter notesPainter = null;
 
     // 現在のレイアウト設定
     private LayoutConfig layout = new LayoutConfig();
@@ -67,6 +73,16 @@ public class LayoutManager {
         bgColor = Utility.convertCodeToHtmlColor(layout.prBackColor);
         bdColor = Utility.convertCodeToHtmlColor(layout.prBorderColor);
         pbColor = Utility.convertCodeToHtmlColor(layout.pbBaseLineColor);
+        
+        if (layout.notessDesign == LayoutConfig.ENotesDesign.Normal) {
+        	notesPainter = new NormalNotesPainter();
+        }
+        else if (layout.notessDesign == LayoutConfig.ENotesDesign.Arc) {
+        	notesPainter = new ArcNotesPainter();
+        }
+        else {
+        	notesPainter = new FlatNotesPainter();
+        }
     }
     
     public void write(File f) throws IOException {
@@ -134,5 +150,9 @@ public class LayoutManager {
     public int getTickBarPosition() {
         return layout.tickBarPosition;
     }
+
+	public NotesPainter getNotesPainter() {
+		return notesPainter;
+	}
 
 }

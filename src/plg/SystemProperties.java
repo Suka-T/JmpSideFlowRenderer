@@ -9,9 +9,11 @@ public class SystemProperties {
 	
 	public static final String SYSP_IMAGEWORKER_COUNT = "renderer.worker.count";
 	public static final String SYSP_DEBUGMODE = "renderer.debugmode";
+	public static final String SYSP_FPS = "renderer.fps";
 	public static final String SYSP_LAYOUT_FILE = "layout.file";
 	
 	private int workerNum = 3;
+	private int fixedFps = 60;
 	private String layoutFile = "";
 	private boolean debugMode = false;
 
@@ -44,6 +46,20 @@ public class SystemProperties {
 			}
         }
         
+        str = props.getProperty(SYSP_FPS);
+        if (str != null) {
+        	try {
+        		fixedFps = Integer.parseInt(str);
+        	} catch (Exception e) {
+        		fixedFps = 60;
+			}
+        	
+        	// 最小20まで 
+        	if (fixedFps < 20) {
+        		fixedFps = 20;
+        	}
+        }
+        
         str = props.getProperty(SYSP_LAYOUT_FILE);
         if (str != null) {
         	try {
@@ -64,5 +80,9 @@ public class SystemProperties {
 
 	public boolean isDebugMode() {
 		return debugMode;
+	}
+	
+	public int getFixedFps() {
+		return fixedFps;
 	}
 }

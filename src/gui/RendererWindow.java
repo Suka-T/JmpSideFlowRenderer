@@ -45,8 +45,8 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
     
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 768;
-    public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
-    public static final long DELAY_NANO = 1_000_000_000 / WINDOW_FIXED_FPS;
+    
+    private long delayNano = 0;
     
     // 次のページにフリップするpx数
     private static final int NEXT_FLIP_COUNT = 0;
@@ -137,6 +137,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         });
         
         LayoutManager.getInstance().initialize(canvas);
+        delayNano = 1_000_000_000 / SystemProperties.getInstance().getFixedFps();
         
         hitEffectPosY = new int[128];
         int keyHeight = getMeasCellHeight();
@@ -263,7 +264,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                     startTime = now;
                 }
 
-                nextFrameTime += DELAY_NANO;
+                nextFrameTime += delayNano;
             } else {
                 // 次のフレームまで余裕があれば軽く寝る
                 long sleepTimeMillis = (nextFrameTime - now) / 1_000_000;
@@ -438,6 +439,16 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             val2 = JMPCoreAccessor.getSoundManager().getLengthSecond() % 60;
             if (val2 < 10) sb.append('0');
             sb.append(val2);
+            g.setColor(backStrColor);
+            g.drawString(sb.toString(), sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(sb.toString(), sx, sy);
+            sy += sh;
+            
+            sb.setLength(0);
+            sb.append("TICK: ");
+            val1 = JMPCoreAccessor.getSoundManager().getMidiUnit().getTickPosition();
+            sb.append(val1);
             g.setColor(backStrColor);
             g.drawString(sb.toString(), sx + 1, sy + 1);
             g.setColor(topStrColor);
