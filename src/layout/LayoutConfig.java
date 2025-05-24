@@ -87,8 +87,8 @@ public class LayoutConfig {
     }
 
     public String prBackColor = "#111111";
-    public String prBorderColor = "#222222";
-    public String cursorMainColor = "#DDDD00";
+    public String prBorderColor = "#202020";
+    public String cursorMainColor = "#DC143C";
     public String cursorEffeColor = "#FFFFFF";
     public String pbBaseLineColor = "#969696";
     // 表示設定
@@ -100,7 +100,7 @@ public class LayoutConfig {
     public ENotesDesign notessDesign = ENotesDesign.Normal;
     public ECursorType cursorType = ECursorType.Keyboard;
     public EColorRule colorRule = EColorRule.Track;
-    public EColorAsign colorAsign = EColorAsign.None;
+    public EColorAsign colorAsign = EColorAsign.Asign;
     public List<String> notesColorCodes;
     
     public LayoutConfig() {

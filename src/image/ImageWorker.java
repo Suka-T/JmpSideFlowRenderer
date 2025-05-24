@@ -112,4 +112,8 @@ public class ImageWorker implements Runnable {
         /* 継承先で処理を記述 */
     }
     
+    public void reset() {
+    	/* 継承先で処理を記述 */
+    }
+    
 }

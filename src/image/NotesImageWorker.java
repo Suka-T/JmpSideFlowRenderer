@@ -60,6 +60,10 @@ class NotesImageWorker extends ImageWorker {
     }
     
     @Override
+    public void reset() {
+    }
+    
+    @Override
     public void run() {
         IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
         Sequence sequence =  midiUnit.getSequence();

@@ -31,6 +31,12 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
         Path fullPath = folder.resolve("renderer.properties");
         try {
         	SystemProperties.getInstance().read(new File(fullPath.toString()));
+        }
+        catch (IOException e1) {
+            //e1.printStackTrace();
+        }
+        
+        try {
         	
         	String layoutFilename = SystemProperties.getInstance().getLayoutFile();
             if (!layoutFilename.contains(".")) {
@@ -40,7 +46,7 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
             LayoutManager.getInstance().read(new File(fullPath.toString()));
         }
         catch (IOException e1) {
-            e1.printStackTrace();
+            //e1.printStackTrace();
         }
         
         if (SwingUtilities.isEventDispatchThread()) {
@@ -143,5 +149,10 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     public String allowedExtensions() {
         return Extensions;
     }
+
+	@Override
+	public void updateSequencer() {
+		MainWindow.adjustTickBar();
+	}
 
 }

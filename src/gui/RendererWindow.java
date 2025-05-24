@@ -33,6 +33,7 @@ import javax.swing.TransferHandler;
 import function.Utility;
 import image.ImagerWorkerManager;
 import jlib.core.ISystemManager;
+import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
@@ -608,7 +609,8 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             Color hitEffectColor = LayoutManager.getInstance().getCursorEffectColor();
             g.setColor(LayoutManager.getInstance().getBackColor());
             int keyHeight = getMeasCellHeight();
-            int effWidth = 4;
+            int inEffWidth = 4;
+            int outEffWidth = 2;
             int effx = 0;
             g.setColor(hitEffectColor);
             for (int i = 0; i < 128; i++) {
@@ -623,12 +625,20 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                 
                 if (isFocus == true) {
                     effx = effOrgX;
+                    for (int j = 0; j < 15; j++) {
+                        float alpha = (1.0f - ((float)j / 15.0f)) * 0.9f;
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                        g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i], inEffWidth, keyHeight);
+                        g2d.fillRect(effx - (outEffWidth * j) - outEffWidth, hitEffectPosY[i], outEffWidth, keyHeight);
+                    }
+/*
                     for (int j = 0; j < 10; j++) {
                         float alpha = 1.0f - j * 0.1f;
                         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
                         g2d.fillRect(effx, hitEffectPosY[i], effWidth, keyHeight);
                         effx += effWidth;
                     }
+*/
                     g2d.setComposite(AlphaComposite.SrcOver);
                 }
             }
@@ -710,9 +720,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         }
         else if (e.getButton() == MouseEvent.BUTTON3) {
             if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-                if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-                    JMPCoreAccessor.getWindowManager().getMainWindow().toggleWindowVisible();
-                }
+            	JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
             }
         }
     }

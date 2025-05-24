@@ -49,6 +49,7 @@ public class ImagerWorkerManager {
             offsetLeftMeas = (offsetLeftMeas < 0) ? -(offsetLeftMeas) : offsetLeftMeas;
             int flipMergin = -(flipCount);
             int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+            workers[i].reset();
             workers[i].setLeftMeasTh(-(flipLine));
             workers[i].disposeImage();
             workers[i].makeImage();

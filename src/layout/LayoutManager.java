@@ -55,7 +55,23 @@ public class LayoutManager {
         notesColor = new ArrayList<Color>();
         ISystemManager sm = JMPCoreAccessor.getSystemManager();
         
-        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.None || layout.notesColorCodes.isEmpty() == true) {
+        if (layout.notesColorCodes.isEmpty() == true) {
+	        if (layout.notesColorCodes.isEmpty() == true) {
+	        	layout.notesColorCodes.add("#00FF00");
+	        	layout.notesColorCodes.add("#FFFF00");
+	        	layout.notesColorCodes.add("#00FFFF");
+	        	layout.notesColorCodes.add("#FF00FF");
+	        	layout.notesColorCodes.add("#FFA500");
+	        	layout.notesColorCodes.add("#87CEEB");
+	        	layout.notesColorCodes.add("#FF69B4");
+	        	layout.notesColorCodes.add("#FFF700");
+	        	//layout.notesColorCodes.add("#50FA7B");
+	        	layout.notesColorCodes.add("#ffe4e1");
+	        	layout.notesColorCodes.add("#FF0000");
+	        }
+        }
+        
+        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.None) {
 	        for (int i = 0; i < 16; i++) {
 	            String key = String.format("ch_color_%d", (i + 1));
 	            notesColor.add(Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key)));
