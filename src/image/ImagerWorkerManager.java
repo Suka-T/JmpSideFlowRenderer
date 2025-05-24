@@ -1,12 +1,15 @@
+package image;
 import java.awt.Image;
 
-class ImagerWorkerManager {
+import plg.SystemProperties;
+
+public class ImagerWorkerManager {
     
     private volatile ImageWorker[] workers = null;
     private int currentWorkerIndex = 0;
     
     public ImagerWorkerManager(int width, int height) {
-        workers = new NotesImageWorker[3];
+        workers = new NotesImageWorker[SystemProperties.getInstance().getWorkerNum()];
         for (int i = 0; i < workers.length; i++) {
             workers[i] = new NotesImageWorker(width, height);
         }
@@ -46,6 +49,7 @@ class ImagerWorkerManager {
             offsetLeftMeas = (offsetLeftMeas < 0) ? -(offsetLeftMeas) : offsetLeftMeas;
             int flipMergin = -(flipCount);
             int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+            workers[i].reset();
             workers[i].setLeftMeasTh(-(flipLine));
             workers[i].disposeImage();
             workers[i].makeImage();

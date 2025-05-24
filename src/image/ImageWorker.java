@@ -1,4 +1,4 @@
-import java.awt.AlphaComposite;
+package image;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -7,7 +7,10 @@ import java.awt.image.VolatileImage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class ImageWorker implements Runnable {
+import layout.LayoutManager;
+import plg.JmpSideFlowRenderer;
+
+public class ImageWorker implements Runnable {
     private int leftMeasTh = 0;
     protected volatile VolatileImage offScreenImage;
     protected Graphics2D offScreenGraphic;
@@ -85,8 +88,10 @@ class ImageWorker implements Runnable {
         }
 
         Graphics2D g2d = offScreenImage.createGraphics();
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+        g2d.setColor(LayoutManager.getInstance().getBackColor());
         g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
+        //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+        //g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
         g2d.dispose();
 
         // オフスクリーン描画 
@@ -105,6 +110,10 @@ class ImageWorker implements Runnable {
     
     protected void paintImage(Graphics g) {
         /* 継承先で処理を記述 */
+    }
+    
+    public void reset() {
+    	/* 継承先で処理を記述 */
     }
     
 }

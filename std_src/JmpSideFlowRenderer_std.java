@@ -1,4 +1,5 @@
 import jmp.JMPLoader;
+import plg.JmpSideFlowRenderer;
 import std.StandAlonePluginInvoker;
 
 public class JmpSideFlowRenderer_std {

@@ -1,32 +1,56 @@
+package plg;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.swing.SwingUtilities;
 
+import gui.RendererWindow;
+import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.player.IPlayerListener;
 import jlib.plugin.ISupportExtensionConstraints;
 import jlib.plugin.JMidiPlugin;
+import layout.LayoutManager;
 
-public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener, ISupportExtensionConstraints {
+public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener, ISupportExtensionConstraints {
 
     public static String Extensions = "";
+    public static RendererWindow MainWindow = null;
 
-    public static void main(String[] args) {
-        System.out.println("JmpSideFlowRenderer");
-    }
-
-    public static JmpSideFlowRendererWindow MainWindow = null;
-
-    public JmpSideFlowRenderer() {
+    public AbstractRenderPlugin() {
     }
 
     @Override
     public void initialize() {
         createExtensions();
         
+        Path folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_DATA_DIR, this));
+        Path fullPath = folder.resolve("renderer.properties");
+        try {
+        	SystemProperties.getInstance().read(new File(fullPath.toString()));
+        }
+        catch (IOException e1) {
+            //e1.printStackTrace();
+        }
+        
+        try {
+        	
+        	String layoutFilename = SystemProperties.getInstance().getLayoutFile();
+            if (!layoutFilename.contains(".")) {
+            	layoutFilename += ".layout";
+            }
+        	fullPath = folder.resolve(layoutFilename);
+            LayoutManager.getInstance().read(new File(fullPath.toString()));
+        }
+        catch (IOException e1) {
+            //e1.printStackTrace();
+        }
+        
         if (SwingUtilities.isEventDispatchThread()) {
-            MainWindow = new JmpSideFlowRendererWindow();
+            MainWindow = new RendererWindow();
             MainWindow.init();
         }
         else {
@@ -35,7 +59,7 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     
                     @Override
                     public void run() {
-                        MainWindow = new JmpSideFlowRendererWindow();
+                        MainWindow = new RendererWindow();
                         MainWindow.init();
                     }
                 });
@@ -125,5 +149,10 @@ public class JmpSideFlowRenderer extends JMidiPlugin implements IPlayerListener,
     public String allowedExtensions() {
         return Extensions;
     }
+
+	@Override
+	public void updateSequencer() {
+		MainWindow.adjustTickBar();
+	}
 
 }

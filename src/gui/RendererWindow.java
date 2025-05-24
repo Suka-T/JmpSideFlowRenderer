@@ -1,3 +1,4 @@
+package gui;
 import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -30,17 +31,23 @@ import javax.swing.JFrame;
 import javax.swing.TransferHandler;
 
 import function.Utility;
+import image.ImagerWorkerManager;
 import jlib.core.ISystemManager;
+import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
+import layout.LayoutConfig;
+import layout.LayoutManager;
+import plg.JmpSideFlowRenderer;
+import plg.SystemProperties;
 
-public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
+public class RendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
     
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 768;
-    public static final int WINDOW_FIXED_FPS = 60; //画面の限界FPS値
-    public static final long DELAY_NANO = 1_000_000_000 / WINDOW_FIXED_FPS;
+    
+    private long delayNano = 0;
     
     // 次のページにフリップするpx数
     private static final int NEXT_FLIP_COUNT = 0;
@@ -92,7 +99,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     /**
      * Create the frame.
      */
-    public JmpSideFlowRendererWindow() {
+    public RendererWindow() {
         this.setTransferHandler(new DropFileHandler());
         this.setTitle("JMP Side Flow Renderer");
         setLocation(10, 10);
@@ -131,6 +138,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         });
         
         LayoutManager.getInstance().initialize(canvas);
+        delayNano = 1_000_000_000 / SystemProperties.getInstance().getFixedFps();
         
         hitEffectPosY = new int[128];
         int keyHeight = getMeasCellHeight();
@@ -257,7 +265,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
                     startTime = now;
                 }
 
-                nextFrameTime += DELAY_NANO;
+                nextFrameTime += delayNano;
             } else {
                 // 次のフレームまで余裕があれば軽く寝る
                 long sleepTimeMillis = (nextFrameTime - now) / 1_000_000;
@@ -308,50 +316,24 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
     private volatile VolatileImage orgScreenImage = null;
     private volatile Graphics orgScreenGraphic = null;
     public void paintDisplay(Graphics g) {
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        
+        /* ノーツ描画 */
+        Sequence sequence = midiUnit.getSequence();
+        
         GraphicsConfiguration gc = getGraphicsConfiguration();
         if (orgScreenImage == null || orgScreenImage.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE) {
             orgScreenImage = LayoutManager.getInstance().createLayerImage(getOrgWidth(), getOrgHeight());
             orgScreenGraphic = orgScreenImage.createGraphics();
         }
         
-        paintContents(orgScreenGraphic);
-        
-        Graphics2D g2 = (Graphics2D) g;
-        
-        // 補間方法を設定 
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); //バイリニア補間 
-        //g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC); //高速 
-        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        
-        
-        Dimension dim = this.getContentPane().getSize();
-        g.drawImage(orgScreenImage, 
-                0, 0, (int)dim.getWidth(), (int)dim.getHeight(), 
-                0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
-                null);
-    }
-
-    private void calcDispMeasCount() {
-        int x = getZeroPosition();
-        int measLen = 0;
-        while (x <= getOrgWidth() * 2) {
-            x += getMeasCellWidth();
-            measLen++;
-        }
-        dispMeasCount = measLen;
-    }
-    
-    public int getDispMeasCount() {
-        return dispMeasCount;
-    }
-
-    private int cnt = 0;
-    private void paintContents(Graphics g) {
-        Graphics2D g2d = (Graphics2D)g;
-        g.setColor(LayoutManager.getInstance().getBackColor());
-        g.fillRect(0, 0, getOrgWidth(), getOrgHeight());
+        int paneWidth = getContentPane().getWidth();
+        int paneHeight = getContentPane().getHeight();
         
         if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true) {
+            g.setColor(LayoutManager.getInstance().getBackColor());
+            g.fillRect(0, 0, paneWidth, paneHeight);
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
             g.setColor(Color.WHITE);
             FontMetrics fm = g.getFontMetrics();
@@ -362,7 +344,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             sb.append("＼＿ヘ(Д｀*)");
             stringWidth = fm.stringWidth(sb.toString());
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
             sb.setLength(0);
             sb.append("Now loading");
             stringWidth = fm.stringWidth(sb.toString());
@@ -375,113 +357,11 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             }
             cnt++;
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
-            return;
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
         }
-        
-        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        
-        /* ノーツ描画 */
-        Sequence sequence = midiUnit.getSequence();
-
-        /* ノーツ描画 */
-        if (sequence != null) {
-            
-            // フリップ
-            calcDispMeasCount();
-            if (midiUnit.isRunning() == true) {
-                flipPage();
-            }
-            
-            if (imageWorkerMgr.getNotesImage() == null) {
-                // 描画が追いついていない 
-                g.setColor(Color.WHITE);
-                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
-                FontMetrics fm = g.getFontMetrics();
-                sb.setLength(0);
-                sb.append("...φ(｡_｡*)");
-                int stringWidth = fm.stringWidth(sb.toString());
-                int stringHeight = fm.getHeight();
-                g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
-                sb.setLength(0);
-                sb.append("Rendering now");
-                stringWidth = fm.stringWidth(sb.toString());
-                stringHeight = fm.getHeight();
-                g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
-            }
-            else {
-                
-                // 現在の画面に表示する相対tick位置を求める 
-                long tickPos = midiUnit.getTickPosition();
-                long relPosTick =  tickPos + sequence.getResolution() * getLeftMeas();
-                // 相対tick位置を座標に変換(TICK × COORD / RESOLUTION)
-                int tickX = (int) ((double)relPosTick * (double)getMeasCellWidth() / (double)sequence.getResolution()); 
-                g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
-                
-                int tickBarPosition = LayoutManager.getInstance().getTickBarPosition();
-                if (tickBarPosition > 0) {
-                    Color[] notesColor = LayoutManager.getInstance().getNotesColors();
-                    
-                    /*  Keyboard */
-                    int keyFocus = 0;
-                    Color keyBgColor;
-                    for (int i=0; i<aHakken.length; i++) {
-                        keyFocus = notesMonitor.getTopNoteOnChannel(aHakken[i].midiNo);
-                        if (keyFocus != -1) {
-                            keyBgColor = notesColor[keyFocus];
-                        }
-                        else {
-                            keyBgColor = Color.WHITE;
-                        }
-                        
-                        g.setColor(keyBgColor);
-                        g.fill3DRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height, true);
-                        g.setColor(Color.LIGHT_GRAY);
-                        g.drawRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height);
-                    }
-                    for (int i=0; i<aKokken.length; i++) {
-                        keyFocus = notesMonitor.getTopNoteOnChannel(aKokken[i].midiNo);
-                        if (keyFocus != -1) {
-                            keyBgColor = notesColor[keyFocus];
-                        }
-                        else {
-                            keyBgColor = Color.BLACK;
-                        }
-                        
-                        g.setColor(keyBgColor);
-                        g.fill3DRect(aKokken[i].x, aKokken[i].y, aKokken[i].width, aKokken[i].height, true);
-                    }
-                    
-                    /* 衝突エフェクト描画 */
-                    Color hitEffectColor = LayoutManager.getInstance().getHitEffectColor();
-                    g.setColor(LayoutManager.getInstance().getBackColor());
-                    int keyHeight = getMeasCellHeight();
-                    int effWidth = 4;
-                    int effx = 0;
-                    g.setColor(hitEffectColor);
-                    for (int i = 0; i < 128; i++) {
-                        int midiNo = 127 - i;
-                        if (notesMonitor.getTopNoteOnChannel(midiNo) != -1) {
-                            effx = tickBarPosition  - aHakken[0].width;;
-                            for (int j = 0; j < 10; j++) {
-                                float alpha = 1.0f - j * 0.1f;
-                                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                                g2d.fillRect(effx - effWidth, hitEffectPosY[i], effWidth, keyHeight);
-                                effx -= effWidth;
-                            }
-                            g2d.setComposite(AlphaComposite.SrcOver);
-                        }
-                    }
-                    
-                    /* Tickbar描画 */
-                    Color csrColor = LayoutManager.getInstance().getCursorColor();
-                    g2d.setColor(csrColor);
-                    g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
-                }
-            }
-        }
-        else {
+        else if (sequence == null) {
+            g.setColor(LayoutManager.getInstance().getBackColor());
+            g.fillRect(0, 0, paneWidth, paneHeight);
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
             FontMetrics fm = g.getFontMetrics();
             g.setColor(Color.WHITE);
@@ -489,12 +369,47 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             sb.append("_(┐「ε:)_");
             int stringWidth = fm.stringWidth(sb.toString());
             int stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 - 20);
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
             sb.setLength(0);
             sb.append("Drag and Drop your MIDI or MIDI and AUDIO files here.");
             stringWidth = fm.stringWidth(sb.toString());
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (getOrgWidth() - stringWidth) / 2, (getOrgHeight() - stringHeight) / 2 + 20);
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
+        }
+        else if (imageWorkerMgr.getNotesImage() == null) {
+            // 描画が追いついていない
+            g.setColor(LayoutManager.getInstance().getBackColor());
+            g.fillRect(0, 0, paneWidth, paneHeight);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
+            FontMetrics fm = g.getFontMetrics();
+            sb.setLength(0);
+            sb.append("...φ(｡_｡*)");
+            int stringWidth = fm.stringWidth(sb.toString());
+            int stringHeight = fm.getHeight();
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
+            sb.setLength(0);
+            sb.append("Rendering now");
+            stringWidth = fm.stringWidth(sb.toString());
+            stringHeight = fm.getHeight();
+            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
+        }
+        else {
+            paintContents(orgScreenGraphic);
+            
+            Graphics2D g2 = (Graphics2D) g;
+            
+            // 補間方法を設定 
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); //バイリニア補間 
+            //g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC); //高速 
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            
+            
+            Dimension dim = this.getContentPane().getSize();
+            g.drawImage(orgScreenImage, 
+                    0, 0, (int)dim.getWidth(), (int)dim.getHeight(), 
+                    0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), 
+                    null);
         }
         
 
@@ -525,6 +440,16 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             val2 = JMPCoreAccessor.getSoundManager().getLengthSecond() % 60;
             if (val2 < 10) sb.append('0');
             sb.append(val2);
+            g.setColor(backStrColor);
+            g.drawString(sb.toString(), sx + 1, sy + 1);
+            g.setColor(topStrColor);
+            g.drawString(sb.toString(), sx, sy);
+            sy += sh;
+            
+            sb.setLength(0);
+            sb.append("TICK: ");
+            val1 = JMPCoreAccessor.getSoundManager().getMidiUnit().getTickPosition();
+            sb.append(val1);
             g.setColor(backStrColor);
             g.drawString(sb.toString(), sx + 1, sy + 1);
             g.setColor(topStrColor);
@@ -578,18 +503,152 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
             g.setColor(topStrColor);
             g.drawString(sb.toString(), sx, sy);
             sy += sh;
-/*
-            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
-                int dbx = sx + (i * 15);
-                if (imageWorkerMgr.getWorker(i).isExec() == false) {
-                    g.setColor(Color.GREEN);
+            
+            if (SystemProperties.getInstance().isDebugMode() == true) {
+	            for (int i=0; i<imageWorkerMgr.getNumOfWorker(); i++) {
+	                int dbx = sx + (i * 15);
+	                if (imageWorkerMgr.getWorker(i).isExec() == false) {
+	                    g.setColor(Color.GREEN);
+	                }
+	                else {
+	                    g.setColor(Color.RED);
+	                }
+	                g.fillRect(dbx, sy + 5, 10, 10);
+	            }
+            }
+        }
+    }
+
+    private void calcDispMeasCount() {
+        int x = getZeroPosition();
+        int measLen = 0;
+        while (x <= getOrgWidth() * 2) {
+            x += getMeasCellWidth();
+            measLen++;
+        }
+        dispMeasCount = measLen;
+    }
+    
+    public int getDispMeasCount() {
+        return dispMeasCount;
+    }
+
+    private int cnt = 0;
+    private void paintContents(Graphics g) {
+        Graphics2D g2d = (Graphics2D)g;
+        g.setColor(LayoutManager.getInstance().getBackColor());
+        g.fillRect(0, 0, getOrgWidth(), getOrgHeight());
+        
+        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        
+        /* ノーツ描画 */
+        Sequence sequence = midiUnit.getSequence();
+
+        // フリップ
+        calcDispMeasCount();
+        if (midiUnit.isRunning() == true) {
+            flipPage();
+        }
+        
+        // 現在の画面に表示する相対tick位置を求める 
+        long tickPos = midiUnit.getTickPosition();
+        long relPosTick =  tickPos + sequence.getResolution() * getLeftMeas();
+        // 相対tick位置を座標に変換(TICK × COORD / RESOLUTION)
+        int tickX = (int) ((double)relPosTick * (double)getMeasCellWidth() / (double)sequence.getResolution()); 
+        g.drawImage(imageWorkerMgr.getNotesImage(), /*layout.keyWidth*/ - tickX, 0, null);
+        
+        int tickBarPosition = LayoutManager.getInstance().getTickBarPosition();
+        if (tickBarPosition > 0) {
+            int effOrgX = tickBarPosition;
+            if (LayoutManager.getInstance().getCursorType() == LayoutConfig.ECursorType.Keyboard) {
+                /*  Keyboard */
+                int keyFocus = 0;
+                Color keyBgColor;
+                for (int i=0; i<aHakken.length; i++) {
+                	if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                		keyFocus = notesMonitor.getTopNoteOnChannel(aHakken[i].midiNo);
+                	}
+                	else if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Track) {
+                		keyFocus = notesMonitor.getTopNoteOnTrack(aHakken[i].midiNo);
+                	}
+                	
+                    if (keyFocus != -1) {
+                        keyBgColor = LayoutManager.getInstance().getNotesColor(keyFocus);
+                    }
+                    else {
+                        keyBgColor = Color.WHITE;
+                    }
+                    
+                    g.setColor(keyBgColor);
+                    g.fill3DRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height, true);
+                    g.setColor(Color.LIGHT_GRAY);
+                    g.drawRect(aHakken[i].x, aHakken[i].y, aHakken[i].width, aHakken[i].height);
+                }
+                for (int i=0; i<aKokken.length; i++) {
+                	if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                		keyFocus = notesMonitor.getTopNoteOnChannel(aKokken[i].midiNo);
+                	}
+                	else if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Track) {
+                		keyFocus = notesMonitor.getTopNoteOnTrack(aKokken[i].midiNo);
+                	}
+                	
+                    if (keyFocus != -1) {
+                        keyBgColor = LayoutManager.getInstance().getNotesColor(keyFocus);
+                    }
+                    else {
+                        keyBgColor = Color.BLACK;
+                    }
+                    
+                    g.setColor(keyBgColor);
+                    g.fill3DRect(aKokken[i].x, aKokken[i].y, aKokken[i].width, aKokken[i].height, true);
+                }
+            }
+            
+            /* 衝突エフェクト描画 */
+            Color hitEffectColor = LayoutManager.getInstance().getCursorEffectColor();
+            g.setColor(LayoutManager.getInstance().getBackColor());
+            int keyHeight = getMeasCellHeight();
+            int inEffWidth = 4;
+            int outEffWidth = 2;
+            int effx = 0;
+            g.setColor(hitEffectColor);
+            for (int i = 0; i < 128; i++) {
+                int midiNo = 127 - i;
+                boolean isFocus = false;
+                if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+                	isFocus = (notesMonitor.getTopNoteOnChannel(midiNo) != -1) ? true : false;
                 }
                 else {
-                    g.setColor(Color.RED);
+                	isFocus = (notesMonitor.getTopNoteOnTrack(midiNo) != -1) ? true : false;
                 }
-                g.fillRect(dbx, sy + 5, 10, 10);
-            }
+                
+                if (isFocus == true) {
+                    effx = effOrgX;
+                    for (int j = 0; j < 15; j++) {
+                        float alpha = (1.0f - ((float)j / 15.0f)) * 0.9f;
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                        g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i], inEffWidth, keyHeight);
+                        g2d.fillRect(effx - (outEffWidth * j) - outEffWidth, hitEffectPosY[i], outEffWidth, keyHeight);
+                    }
+/*
+                    for (int j = 0; j < 10; j++) {
+                        float alpha = 1.0f - j * 0.1f;
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                        g2d.fillRect(effx, hitEffectPosY[i], effWidth, keyHeight);
+                        effx += effWidth;
+                    }
 */
+                    g2d.setComposite(AlphaComposite.SrcOver);
+                }
+            }
+            
+            /* Tickbar描画 */
+            Color csrColor = LayoutManager.getInstance().getCursorColor();
+            g2d.setColor(csrColor);
+            g2d.drawLine(tickBarPosition - 1, 0, tickBarPosition - 1, getOrgHeight());
+            g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
+            g2d.drawLine(tickBarPosition + 1, 0, tickBarPosition + 1, getOrgHeight());
         }
     }
 
@@ -661,9 +720,7 @@ public class JmpSideFlowRendererWindow extends JFrame implements MouseListener, 
         }
         else if (e.getButton() == MouseEvent.BUTTON3) {
             if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-                if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-                    JMPCoreAccessor.getWindowManager().getMainWindow().toggleWindowVisible();
-                }
+            	JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
             }
         }
     }
