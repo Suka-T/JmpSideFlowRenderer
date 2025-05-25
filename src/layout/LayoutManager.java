@@ -19,7 +19,7 @@ import layout.parts.NotesPainter;
 
 public class LayoutManager {
     
-    public static final int DEFAULT_1MEAS_WIDTH = 420;//320;
+    public static final int DEFAULT_1MEAS_WIDTH = 420;
     public static final int DEFAULT_TICK_MEAS = 1;
     
     private List<Color> notesColor = null;

@@ -82,7 +82,7 @@ class NotesImageWorker extends ImageWorker {
     
     @Override
     public int getImageWidth() {
-        return (getWidth() * 3) + LayoutManager.getInstance().getTickBarPosition();
+        return (getWidth() * 3) + (getWidth() / 2);
     }
 
     @Override

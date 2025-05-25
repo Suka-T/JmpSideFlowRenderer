@@ -47,6 +47,8 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
     public static final int DEFAULT_WINDOW_WIDTH = 1280;
     public static final int DEFAULT_WINDOW_HEIGHT = 768;
     
+    public static final int KEYNOAD_WIDTH = 50;
+    
     private long delayNano = 0;
     
     // 次のページにフリップするpx数
@@ -153,7 +155,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         
         int kkCnt = 0;
         int hkCnt = 0;
-        int hkWidth = 50;
+        int hkWidth = KEYNOAD_WIDTH;
         int kkWidth = (int)(hkWidth * 0.7);
         int hakkenHeight = (128 * keyHeight) / 75;
         for (int i = 0; i < 128; i++) {
