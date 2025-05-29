@@ -1,4 +1,5 @@
 package image;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -7,370 +8,342 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sound.midi.MidiEvent;
-import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.ShortMessage;
 
 import gui.RendererWindow;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
-import jlib.midi.LightweightShortMessage;
+import jlib.midi.MappedParseFunc;
+import jlib.midi.MappedSequence;
 import jlib.midi.MidiByte;
-import jlib.midi.MidiUtility;
 import layout.LayoutConfig;
 import layout.LayoutManager;
 import layout.parts.NotesPainter;
-import plg.JmpSideFlowRenderer;
+import plg.AbstractRenderPlugin;
+import plg.SystemProperties;
+import plg.SystemProperties.SyspLayerOrder;
 
-class NotesImageWorker extends ImageWorker {
-    public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
-    public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
-    
-    private BasicStroke normalStroke = new BasicStroke(1.0f);
-    private BasicStroke bdStroke = new BasicStroke(2.0f);
-    private BasicStroke pbStroke = new BasicStroke(2.0f);
-    private int[] indexCache = null;
-    private MidiEvent[][] noteOnEvents = null;
-    private List<Integer> pbBufferX = null;
-    private List<Integer> pbBufferY = null;
-    
-    public NotesImageWorker(int width, int height) {
-        super(width, height);
-        
-        noteOnEvents = new MidiEvent[16][];
-        for (int i=0; i<16; i++) {
-            noteOnEvents[i] = new MidiEvent[128];
-        }
-        pbBufferX = new ArrayList<Integer>();
-        pbBufferY = new ArrayList<Integer>();
-    }
-    
-    public final int[] getTrackCache() {
-        return indexCache;
-    }
-    
-    public void copyTrackCacheFrom(int[] src) {
-        if (indexCache != null) {
-            for (int i=0; i<src.length; i++) {
-                indexCache[i] = src[i];
-            }
-        }
-    }
-    
-    @Override
-    public void reset() {
-    }
-    
-    @Override
-    public void run() {
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        Sequence sequence =  midiUnit.getSequence();
-        if (sequence == null) {
-            return;
-        }
-        
-        super.run();
-    }
-    
-    @Override
-    public void disposeImage() {
-        indexCache = null;
-        super.disposeImage();
-    }
-    
-    @Override
-    public int getImageWidth() {
-        return (getWidth() * 3) + (getWidth() / 2);
-    }
+public class NotesImageWorker extends ImageWorker {
+	public static final int DISP_WIDTH_COUNT = 8;
+	public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
+	public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
 
-    @Override
-    protected void paintImage(Graphics g) {
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        Sequence sequence = midiUnit.getSequence();
-        if (sequence == null) {
-            return;
-        }
-        
-        paintBorder(g);
-        paintNotes(g, getLeftMeasTh());
-    }
-    
-    protected void paintBorder(Graphics g) {
-    	Graphics2D g2d = (Graphics2D)g;
-        RendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
-        g.setColor(LayoutManager.getInstance().getBorderColor());
-        g2d.setStroke(bdStroke);
-        int x = mainWindow.getZeroPosition();
-        int y = mainWindow.getMeasCellHeight() * 3;
-        if (LayoutManager.getInstance().isVisibleHorizonBorder() == true) {
-            while (y <= getImageHeight()) {
-                g.drawLine(x, y, x + getImageWidth(), y);
-                y += mainWindow.getMeasCellHeight() * 12;
-            }
-        }
-        x = mainWindow.getZeroPosition();
-        y = 0;
-        while (x <= getImageWidth()) {
-            if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
-                g.drawLine(x, y, x, y + getImageHeight());
-            }
-            x += mainWindow.getMeasCellWidth();
-        }
-        g2d.setStroke(normalStroke);
-    }
-    
-    protected boolean isNoteOn(MidiMessage mes) {
-        ShortMessage sMes = (ShortMessage)mes;
-        int command = sMes.getCommand();
-        int data2 = sMes.getData2();
-        if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
-            return true;
-        }
-        return false;
-        
-/*
-        IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
-        return toolkit.isNoteOn(mes);
-*/
-    }
-    
-    protected boolean isNoteOff(MidiMessage mes) {
-        ShortMessage sMes = (ShortMessage)mes;
-        int command = sMes.getCommand();
-        int data2 = sMes.getData2();
-        if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF) || (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
-            return true;
-        }
-        return false;
-        
-/*
-        IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
-        return toolkit.isNoteOff(mes);
-*/
-    }
-    
-    protected boolean isPitchbend(MidiMessage mes) {
-        ShortMessage sMes = (ShortMessage)mes;
-        int command = sMes.getCommand();
-        if (command == MidiByte.Status.Channel.ChannelVoice.Fst.PITCH_BEND) {
-            return true;
-        }
-        return false;
-        
-/*
-        IMidiToolkit toolkit = JMPCoreAccessor.getSoundManager().getMidiToolkit();
-        return toolkit.isPitchBend(mes);
-*/
-    }
-    
-    protected void paintNotes(Graphics g, int leftMeas) {
-        Graphics2D g2d = (Graphics2D)g;
-        RendererWindow mainWindow = JmpSideFlowRenderer.MainWindow;
-        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-        INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-        Sequence sequence = midiUnit.getSequence();
-        if (sequence == null) {
-            return;
-        }
-        
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        
-        NotesPainter.Context nContext = LayoutManager.getInstance().getNotesPainter().newContext();
-        nContext.g = g;
-        
-        paintBorder(g);
+	private class NoteOnCache {
+		public long tick = -1;
+		public int trackIndex = 0;
+		public int channel = 0;
+		public int data1 = 0;
+		public int data2 = 0;
+		NoteOnCache() {
+			init();
+		}
+		
+		public void init() {
+			tick = -1;
+			trackIndex = 0;
+		}
+	}
+	
+	private BasicStroke normalStroke = new BasicStroke(1.0f);
+	private BasicStroke bdStroke = new BasicStroke(2.0f);
+	private BasicStroke pbStroke = new BasicStroke(2.0f);
+	private int[] indexCache = null;
+	private NoteOnCache[][] noteOnEvents = null;
+	private List<Integer> pbBufferX = null;
+	private List<Integer> pbBufferY = null;
 
-        // 上部位置の調整
-        int offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
-        int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
-        int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
-        int totalMeasCount = (int)((double)mainWindow.getDispMeasCount() * 2.0);
-        int keyCount = (127 - mainWindow.getTopMidiNumber());
-        int topOffset = (mainWindow.getMeasCellHeight() * keyCount);
+	public NotesImageWorker(int width, int height) {
+		super(width, height);
 
-        long absLeftMeas = -(leftMeas);
-        long vpLenTick = (totalMeasCount * sequence.getResolution());
-        long vpStartTick = absLeftMeas * sequence.getResolution() - offsetCoordXtoTick;
-        long vpEndTick = vpStartTick + vpLenTick + (offsetCoordXtoTick * 2);
+		noteOnEvents = new NoteOnCache[16][];
+		for (int i = 0; i < 16; i++) {
+			noteOnEvents[i] = new NoteOnCache[128];
+			for (int j = 0; j < noteOnEvents[i].length; j++) {
+				noteOnEvents[i][j] = new NoteOnCache();
+			}
+		}
+		pbBufferX = new ArrayList<Integer>();
+		pbBufferY = new ArrayList<Integer>();
+	}
 
-        int pbMaxHeight = 100;
-        int pbCenterY = (pbMaxHeight / 2) + 100;
+	public final int[] getTrackCache() {
+		return indexCache;
+	}
 
-        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
-            g.setColor(LayoutManager.getInstance().getPitchbendColor());
-            g.drawLine(0, pbCenterY, getImageWidth(), pbCenterY);
-        }
-        
-        if (notesMonitor.getNumOfTrack() <= 0) {
-            return;
-        }
-        
-        if (indexCache == null) {
-            indexCache = new int[notesMonitor.getNumOfTrack()];
-            for (int i=0; i<indexCache.length; i++) {
-                indexCache[i] = 0;
-            }
-        }
-        
-        int startMeas = 0;
-        int startOffset = 0;
-        int x = 0;                        
-        int y = 0;
-        int width = 0;
-        int height = 0;
-        int channel = 0;
-        int data1 = 0;
-        //int data2 = 0;
-        
-        //for (int trkIndex = notesMonitor.getNumOfTrack() - 1; trkIndex >= 0; trkIndex--) {
-        for (int trkIndex = 0; trkIndex < notesMonitor.getNumOfTrack(); trkIndex++) {
-            for (int i=0; i<16; i++) {
-                for (int j=0; j<128; j++) {
-                    noteOnEvents[i][j] = null;
-                }
-            }
-            
-            pbBufferX.clear();
-            pbBufferY.clear();
-            
-            boolean notCache = true;
-            /*
-            if (notesMonitor.getNumOfNotes() >= 1000000) {
-                // TODO ノーツ100万以上はキャッシュを使用することで高速化する。
-                //       ただし、バイナリ構成によってバグるため要検討
-                notCache = false;
-            }
-            */
-            int startIndex = indexCache[trkIndex];
-            if (vpEndTick > midiUnit.getTickLength() - (totalMeasCount * sequence.getResolution())) {
-                // 終端付近は取り逃さないようにする 
-                notCache = true;
-            }
-                    
-            for (int i = startIndex; i <  notesMonitor.getNumOfTrackEvent(trkIndex); i++) {
-                // Midiメッセージを取得
-                MidiEvent event = notesMonitor.getTrackEvent(trkIndex, i);
-                if (vpEndTick < event.getTick()) {
-                    // 描き残しがあるNoteOnが無いようにする 
-                    boolean isExestsNoteOn = false;
-                    for (int ch = 0; ch < 16; ch++) {
-                        for (int midiNoIndex = 0; midiNoIndex < 128; midiNoIndex++) {
-                            if (noteOnEvents[ch][midiNoIndex] != null) {
-                                isExestsNoteOn = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (isExestsNoteOn == false) {
-                        if (notCache == false) {
-                            indexCache[trkIndex] = i;
-                        }
-                        break;
-                    }
-                }
-                
-                g2d.setStroke(normalStroke);
-                
-                MidiMessage message = event.getMessage();
-                if (message instanceof ShortMessage) {
-                    // ShortMessage解析
-                    ShortMessage sMes = (ShortMessage) message;
-                    channel = sMes.getChannel();
-                    data1 = sMes.getData1();
-                    //data2 = sMes.getData2();
-                    
-                    if (isNoteOn(sMes) == true) {
-                        // Note ON
-                        noteOnEvents[channel][data1] = event;
-                    }
-                    else if (isNoteOff(sMes) == true) {
-                    	int trackIndex = 0;
-                        if (message instanceof LightweightShortMessage) {
-                        	LightweightShortMessage lwMes = (LightweightShortMessage) message;
-                        	trackIndex = (int)lwMes.getTrackIndex();
-                        }
-                        
-                        // Note OFF
-                        MidiEvent endEvent = event;
-                        MidiEvent startEvent = noteOnEvents[channel][data1];
-                        noteOnEvents[channel][data1] = null;
-                        
-                        if ((startEvent == null) || // 例外 対のNoteONが無いNoteOff 
-                            (endEvent.getTick() <= startEvent.getTick()) || // 例外 NoteOnとNoteOffのtick矛盾   
-                            (vpStartTick > event.getTick()) ) // ビューポート範囲外は無視  
-                        {
-                            // 無効データは何もしない 
-                        }
-                        else {
-                            // 描画開始
-                            startMeas = (int) ((double) startEvent.getTick() / (double) sequence.getResolution()) + leftMeas;
-                            startOffset = (int) ((double) startEvent.getTick() % (double) sequence.getResolution());
-                            nContext.x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
-                            nContext.y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
-    
-                            nContext.w = (int) (mainWindow.getMeasCellWidth()
-                                    * (double) (endEvent.getTick() - startEvent.getTick()) / sequence.getResolution());
-                            nContext.h = mainWindow.getMeasCellHeight();
-                            
-                            if (nContext.w < 2) {
-                            	nContext.w = 2;
-                            }
-                            
-                            if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
-                            	nContext.bgColor = LayoutManager.getInstance().getNotesColor(channel);
-                            }
-                            else {
-                            	nContext.bgColor = LayoutManager.getInstance().getNotesColor(trackIndex);
-                            }
-                            nContext.bdColor = LayoutManager.getInstance().getBackColor();
-                            LayoutManager.getInstance().getNotesPainter().paintNotes(nContext);
-                        }
-                    }
-                    else if (isPitchbend(sMes) == true) {
-                        if (LayoutManager.getInstance().isVisiblePbLine() == true) {
-                            /* ピッチベンド描画 */
-                            int pbValue = MidiUtility.convertPitchBendValue(sMes) - 8192;
-                            int signed = (pbValue < 0) ? -1 : 1;
+	public void copyTrackCacheFrom(int[] src) {
+		if (indexCache != null) {
+			for (int i = 0; i < src.length; i++) {
+				indexCache[i] = src[i];
+			}
+		}
+	}
 
-                            startMeas = (int) ((double) event.getTick() / (double) sequence.getResolution()) + leftMeas;
-                            startOffset = (int) ((double) event.getTick() % (double) sequence.getResolution());
-                            x = (int) (mainWindow.getMeasCellWidth() * (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;                        
+	@Override
+	public void reset() {
+	}
 
-                            int absPbValue = signed * pbValue;
-                            y = pbCenterY - (signed * ((absPbValue * pbMaxHeight) / 8192));
+	@Override
+	public void run() {
+		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+		Sequence sequence = midiUnit.getSequence();
+		if (sequence == null) {
+			return;
+		}
 
-                            // PB描画
-                            Color pbColor = LayoutManager.getInstance().getNotesColor(channel);
-                            int pastX = 0;
-                            int pastY = pbCenterY;
-                            if (pbBufferX.isEmpty() == true) {
-                                int pastPbValue = notesMonitor.getPitchBend(channel);
-                                int pastSigned = (pastPbValue < 0) ? -1 : 1;
-                                int pastAbsPbValue = pastSigned * pastPbValue;
-                                
-                                pastX = x;
-                                pastY = pbCenterY - (pastSigned * ((pastAbsPbValue * pbMaxHeight) / 8192));
-                            }
-                            else {
-                                pastX = pbBufferX.get(pbBufferX.size() - 1);
-                                pastY = pbBufferY.get(pbBufferY.size() - 1);
-                            }
+		super.run();
+	}
 
-                            Graphics2D g2 = (Graphics2D) g;
-                            g2.setStroke(pbStroke);
-                            g2.setColor(pbColor);
-                            g2.drawLine(pastX, pastY, x, pastY);
-                            g2.drawLine(x, pastY, x, y);
-                            pbBufferX.add(x);
-                            pbBufferY.add(y);
-                            g2.setStroke(normalStroke);
-                        }
-                    }
-                }
-            } /* Trk End */
-        }
-    }
+	@Override
+	public void disposeImage() {
+		indexCache = null;
+		super.disposeImage();
+	}
+
+	@Override
+	public int getImageWidth() {
+		return (getWidth() * DISP_WIDTH_COUNT) + (getWidth() / 2);
+	}
+
+	@Override
+	protected void paintImage(Graphics g) {
+		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+		Sequence sequence = midiUnit.getSequence();
+		if (sequence == null) {
+			return;
+		}
+
+		paintBorder(g);
+		paintNotes(g, getLeftMeasTh());
+	}
+
+	protected void paintBorder(Graphics g) {
+		Graphics2D g2d = (Graphics2D) g;
+		RendererWindow mainWindow = AbstractRenderPlugin.MainWindow;
+		g.setColor(LayoutManager.getInstance().getBorderColor());
+		g2d.setStroke(bdStroke);
+		int x = mainWindow.getZeroPosition();
+		int y = mainWindow.getMeasCellHeight() * 3;
+		if (LayoutManager.getInstance().isVisibleHorizonBorder() == true) {
+			while (y <= getImageHeight()) {
+				g.drawLine(x, y, x + getImageWidth(), y);
+				y += mainWindow.getMeasCellHeight() * 12;
+			}
+		}
+		x = mainWindow.getZeroPosition();
+		y = 0;
+		while (x <= getImageWidth()) {
+			if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
+				g.drawLine(x, y, x, y + getImageHeight());
+			}
+			x += mainWindow.getMeasCellWidth();
+		}
+		g2d.setStroke(normalStroke);
+	}
+	
+	private RendererWindow mainWindow = AbstractRenderPlugin.MainWindow;
+	private int imgWidth = 0;
+	private long vpStartTick = 0;
+	private long vpEndTick = 0;
+	private long mpStartTick = 0;
+	private long mpEndTick = 0;
+	private int offsetCoordX = 0;
+	private int topOffset = 0;
+
+	protected void paintNotes(Graphics g, int leftMeas) {
+		Graphics2D g2d = (Graphics2D) g;
+		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+		INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
+		MappedSequence sequence = (MappedSequence) midiUnit.getSequence();
+		
+		if (sequence == null) {
+			return;
+		}
+
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+
+		NotesPainter.Context nContext = LayoutManager.getInstance().getNotesPainter().newContext();
+		nContext.g = g;
+
+		paintBorder(g);
+		
+		imgWidth = getImageWidth();
+
+		// 上部位置の調整
+		topOffset = (mainWindow.getMeasCellHeight() * (127 - mainWindow.getTopMidiNumber()));
+		offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
+		int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
+		int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
+		int totalMeasCount = (int) ((double) mainWindow.getDispMeasCount() * 2.0);
+
+		long absLeftMeas = -(leftMeas);
+		long vpLenTick = (totalMeasCount * sequence.getResolution());
+		vpStartTick = absLeftMeas * sequence.getResolution() - offsetCoordXtoTick;
+		vpEndTick = vpStartTick + vpLenTick + (offsetCoordXtoTick * 2);
+
+		int pbMaxHeight = 100;
+		int pbCenterY = (pbMaxHeight / 2) + 100;
+
+		if (LayoutManager.getInstance().isVisiblePbLine() == true) {
+			g.setColor(LayoutManager.getInstance().getPitchbendColor());
+			g.drawLine(0, pbCenterY, getImageWidth(), pbCenterY);
+		}
+
+		if (notesMonitor.getNumOfTrack() <= 0) {
+			return;
+		}
+
+		if (indexCache == null) {
+			indexCache = new int[notesMonitor.getNumOfTrack()];
+			for (int i = 0; i < indexCache.length; i++) {
+				indexCache[i] = 0;
+			}
+		}
+		
+		mpStartTick = vpStartTick - vpLenTick;
+		if (mpStartTick < 0) {
+			mpStartTick = 0;
+		}
+		mpEndTick = vpEndTick + vpLenTick;
+		
+		int trkBegin = 0;
+		int trkEnd = 0;
+		int trkDir = 0;
+		if (SystemProperties.getInstance().getLayerOrder() == SyspLayerOrder.ASC) {
+			trkBegin = 0;
+			trkEnd = notesMonitor.getNumOfTrack();
+			trkDir = 1;
+		}
+		else {
+			trkBegin = notesMonitor.getNumOfTrack() - 1;
+			trkEnd = -1;
+			trkDir = -1;
+		}
+
+		for (int trkIndex = trkBegin; trkIndex != trkEnd; trkIndex+=trkDir) {
+			for (int i = 0; i < 16; i++) {
+				for (int j = 0; j < 128; j++) {
+					noteOnEvents[i][j].init();
+				}
+			}
+
+			pbBufferX.clear();
+			pbBufferY.clear();
+
+			boolean notCache = true;
+			/*
+			if (notesMonitor.getNumOfNotes() >= 1000000) {
+			    // TODO ノーツ100万以上はキャッシュを使用することで高速化する。
+			    //       ただし、バイナリ構成によってバグるため要検討
+			    notCache = false;
+			}
+			*/
+			int startIndex = indexCache[trkIndex];
+			if (vpEndTick > midiUnit.getTickLength() - (totalMeasCount * sequence.getResolution())) {
+				// 終端付近は取り逃さないようにする 
+				notCache = true;
+			}
+
+			g2d.setStroke(normalStroke);
+
+			try {
+				sequence.parse((short) trkIndex, new MappedParseFunc(mpStartTick, mpEndTick) {
+
+					@Override
+					public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
+					}
+
+					@Override
+					public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
+						int command = statusByte & 0xF0;
+						int channel = statusByte & 0x0F;
+						if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
+							noteOnEvents[channel][data1].tick = tick;
+							noteOnEvents[channel][data1].trackIndex = trk;
+							noteOnEvents[channel][data1].channel = channel;
+							noteOnEvents[channel][data1].data1 = data1;
+							noteOnEvents[channel][data1].data2 = data2;
+						} else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
+								|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
+							// Note OFF
+							paintNt(nContext, trk, leftMeas, tick, channel, data1, data2);
+						} else {
+						}
+					}
+
+					@Override
+					public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+					}
+				});
+			} catch (Exception e) {
+				// TODO 自動生成された catch ブロック
+				e.printStackTrace();
+			}
+			
+//			for (int i = 0; i < 16; i++) {
+//				for (int j = 0; j < 128; j++) {
+//					if (noteOnEvents[i][j].tick != -1) {
+//						paintNt(nContext, noteOnEvents[i][j].trackIndex, leftMeas, mpEndTick, noteOnEvents[i][j].channel, noteOnEvents[i][j].data1, noteOnEvents[i][j].data2);
+//					}
+//				}
+//			}
+		}
+	}
+	
+	private void paintNt(NotesPainter.Context nContext, int trk, int leftMeas, long endTick, int channel, int data1, int data2) {
+		// Note OFF
+		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+		MappedSequence sequence = (MappedSequence) midiUnit.getSequence();
+		long endEvent = endTick;
+		long startEvent = noteOnEvents[channel][data1].tick;
+		noteOnEvents[channel][data1].init();
+
+		//if ((startEvent != -1) && ((endEvent <= startEvent) || (vpStartTick > endEvent))) {
+		if ((startEvent == -1) || ((endEvent <= startEvent) || (vpStartTick > endEvent))) {
+			// 無効データは何もしない 
+		} else {
+			// 描画開始
+			int startMeas = (int) ((double) startEvent / (double) sequence.getResolution())
+					+ leftMeas;
+			int startOffset = (int) ((double) startEvent % (double) sequence.getResolution());
+			nContext.x = (int) (mainWindow.getMeasCellWidth()
+					* (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;
+			nContext.y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
+
+			nContext.w = (int) (mainWindow.getMeasCellWidth()
+					* (double) (endEvent - startEvent) / sequence.getResolution());
+			nContext.h = mainWindow.getMeasCellHeight();
+
+			if (nContext.w < 2) {
+				nContext.w = 2;
+			}
+
+			if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
+				nContext.bgColor = LayoutManager.getInstance().getNotesColor(channel);
+			} else {
+				nContext.bgColor = LayoutManager.getInstance().getNotesColor(trk);
+			}
+			nContext.bdColor = LayoutManager.getInstance().getBackColor();
+			
+			int x1 = nContext.x;
+			int x2 = nContext.x + nContext.w - 1;
+			if ((x2 < 0) || (imgWidth <= x1)) {
+				
+			}
+			else {
+				if (x1 < 0) {
+					x1 = 0;
+				}
+				if (x2 >= imgWidth) {
+					x2 = imgWidth - 1;
+				}
+				nContext.x = x1;
+				nContext.w = x2 - x1 + 1;
+				if (nContext.w < 2) {
+					nContext.w = 2;
+				}
+				LayoutManager.getInstance().getNotesPainter().paintNotes(nContext);
+			}
+		}
+	}
 }

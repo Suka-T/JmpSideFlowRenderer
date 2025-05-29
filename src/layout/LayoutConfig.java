@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import gui.RendererWindow;
+import plg.SystemProperties;
 
 public class LayoutConfig {
     
@@ -149,7 +149,7 @@ public class LayoutConfig {
         if (str == null) {
         }
         else if (str.equalsIgnoreCase("top")) {
-        	tickBarPosition = RendererWindow.KEYNOAD_WIDTH;
+        	tickBarPosition = SystemProperties.getInstance().getKeyWidth();
         }
         else {
         	tickBarPosition = LayoutManager.DEFAULT_1MEAS_WIDTH;

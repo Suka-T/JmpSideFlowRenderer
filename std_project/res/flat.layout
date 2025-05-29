@@ -19,5 +19,5 @@ notes.color10=FF0000
 player.bdcolor=222222
 player.bgcolor=111111
 player.colorrule=track
-player.hborder.visible=false
-player.vborder.visible=false
+player.hborder.visible=true
+player.vborder.visible=true

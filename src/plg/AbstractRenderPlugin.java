@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 
 import javax.swing.SwingUtilities;
 
+import gui.JsfrRendererWindow;
 import gui.RendererWindow;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
@@ -21,6 +22,11 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     public static RendererWindow MainWindow = null;
 
     public AbstractRenderPlugin() {
+    }
+    
+    protected void createMainWindow() {
+        MainWindow = new JsfrRendererWindow();
+        MainWindow.init();
     }
 
     @Override
@@ -42,6 +48,8 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
             if (!layoutFilename.contains(".")) {
             	layoutFilename += ".layout";
             }
+            
+            folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_RES_DIR, this));
         	fullPath = folder.resolve(layoutFilename);
             LayoutManager.getInstance().read(new File(fullPath.toString()));
         }
@@ -50,8 +58,7 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
         }
         
         if (SwingUtilities.isEventDispatchThread()) {
-            MainWindow = new RendererWindow();
-            MainWindow.init();
+        	createMainWindow();
         }
         else {
             try {
@@ -59,8 +66,7 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     
                     @Override
                     public void run() {
-                        MainWindow = new RendererWindow();
-                        MainWindow.init();
+                    	createMainWindow();
                     }
                 });
             }
