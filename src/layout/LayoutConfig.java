@@ -152,7 +152,7 @@ public class LayoutConfig {
         	tickBarPosition = SystemProperties.getInstance().getKeyWidth();
         }
         else {
-        	tickBarPosition = LayoutManager.DEFAULT_1MEAS_WIDTH;
+        	tickBarPosition = 420;
         }
         
         str = props.getProperty(LC_PB_COLOR);

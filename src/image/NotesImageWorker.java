@@ -48,7 +48,6 @@ public class NotesImageWorker extends ImageWorker {
 	private BasicStroke normalStroke = new BasicStroke(1.0f);
 	private BasicStroke bdStroke = new BasicStroke(2.0f);
 	private BasicStroke pbStroke = new BasicStroke(2.0f);
-	private int[] indexCache = null;
 	private NoteOnCache[][] noteOnEvents = null;
 	private List<Integer> pbBufferX = null;
 	private List<Integer> pbBufferY = null;
@@ -65,18 +64,6 @@ public class NotesImageWorker extends ImageWorker {
 		}
 		pbBufferX = new ArrayList<Integer>();
 		pbBufferY = new ArrayList<Integer>();
-	}
-
-	public final int[] getTrackCache() {
-		return indexCache;
-	}
-
-	public void copyTrackCacheFrom(int[] src) {
-		if (indexCache != null) {
-			for (int i = 0; i < src.length; i++) {
-				indexCache[i] = src[i];
-			}
-		}
 	}
 
 	@Override
@@ -96,7 +83,6 @@ public class NotesImageWorker extends ImageWorker {
 
 	@Override
 	public void disposeImage() {
-		indexCache = null;
 		super.disposeImage();
 	}
 
@@ -192,19 +178,14 @@ public class NotesImageWorker extends ImageWorker {
 		if (notesMonitor.getNumOfTrack() <= 0) {
 			return;
 		}
-
-		if (indexCache == null) {
-			indexCache = new int[notesMonitor.getNumOfTrack()];
-			for (int i = 0; i < indexCache.length; i++) {
-				indexCache[i] = 0;
-			}
-		}
 		
 		mpStartTick = vpStartTick - vpLenTick;
 		if (mpStartTick < 0) {
 			mpStartTick = 0;
 		}
 		mpEndTick = vpEndTick + vpLenTick;
+		
+		System.out.println("render notes: " + mpStartTick + "-" + mpEndTick);
 		
 		int trkBegin = 0;
 		int trkEnd = 0;
@@ -229,20 +210,6 @@ public class NotesImageWorker extends ImageWorker {
 
 			pbBufferX.clear();
 			pbBufferY.clear();
-
-			boolean notCache = true;
-			/*
-			if (notesMonitor.getNumOfNotes() >= 1000000) {
-			    // TODO ノーツ100万以上はキャッシュを使用することで高速化する。
-			    //       ただし、バイナリ構成によってバグるため要検討
-			    notCache = false;
-			}
-			*/
-			int startIndex = indexCache[trkIndex];
-			if (vpEndTick > midiUnit.getTickLength() - (totalMeasCount * sequence.getResolution())) {
-				// 終端付近は取り逃さないようにする 
-				notCache = true;
-			}
 
 			g2d.setStroke(normalStroke);
 

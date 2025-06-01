@@ -12,6 +12,7 @@ public class SystemProperties {
 	public static final String SYSP_LAYER_ORDER = "renderer.layer.order";
 	public static final String SYSP_LAYOUT_FILE = "layout.file";
 	public static final String SYSP_KEYWIDTH = "renderer.key.width";
+	public static final String SYSP_NOTES_WIDTH = "renderer.notes.width";
 	
 	public static int DEFAULT_KEY_WIDTH = 50;
 	
@@ -34,6 +35,7 @@ public class SystemProperties {
 	private String layoutFile = "";
 	private SyspLayerOrder layerOrder = SyspLayerOrder.DESC;
 	private int keyWidth = DEFAULT_KEY_WIDTH;
+	private int notesWidth = 420;
 	
 	private boolean debugMode = false;
 
@@ -53,8 +55,15 @@ public class SystemProperties {
         	try {
         		workerNum = Integer.parseInt(str);
         	} catch (Exception e) {
-        		workerNum = 3;
+        		workerNum = 10;
 			}
+        	
+            if (workerNum < 3) {
+            	workerNum = 3;
+            }
+            else if (20 < workerNum) {
+            	workerNum = 20;
+            }
         }
         
         str = props.getProperty(SYSP_DEBUGMODE);
@@ -99,6 +108,24 @@ public class SystemProperties {
         	}
         }
         
+        str = props.getProperty(SYSP_NOTES_WIDTH);
+        if (str == null) {
+        }
+        else {
+	        try {
+	        	notesWidth = Integer.parseInt(str);
+	        }catch (Exception e) {
+	        	notesWidth = 420;
+			}
+        }
+        
+        if (notesWidth < 160) {
+        	notesWidth = 160;
+        }
+        else if (1200 < notesWidth) {
+        	notesWidth = 1200;
+        }
+        
         keyWidth = DEFAULT_KEY_WIDTH;
         
         str = props.getProperty(SYSP_KEYWIDTH);
@@ -134,5 +161,8 @@ public class SystemProperties {
 	}
 	public void setKeyWidth(int keyWidth) {
 		this.keyWidth = keyWidth;
+	}
+	public int getNotesWidth() {
+		return notesWidth;
 	}
 }
