@@ -3,6 +3,7 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.GraphicsConfiguration;
 import java.awt.Transparency;
+import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +19,6 @@ import layout.parts.NormalNotesPainter;
 import layout.parts.NotesPainter;
 
 public class LayoutManager {
-    
-    public static final int DEFAULT_1MEAS_WIDTH = 420;//320;
     public static final int DEFAULT_TICK_MEAS = 1;
     
     private List<Color> notesColor = null;
@@ -44,9 +43,13 @@ public class LayoutManager {
         return instance;
     }
     
-    public VolatileImage createLayerImage(int width, int height) {
+	public VolatileImage createLayerImage(int width, int height) {
         GraphicsConfiguration gc = rootCanvas.getGraphicsConfiguration();
         return gc.createCompatibleVolatileImage(width, height, Transparency.OPAQUE);
+    }
+	
+	public BufferedImage createBufferdImage(int width, int height) {
+		return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     }
     
     public void initialize(Canvas canvas) {

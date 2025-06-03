@@ -1,18 +1,17 @@
 package image;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
 import java.awt.Image;
-import java.awt.image.VolatileImage;
+import java.awt.image.BufferedImage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import layout.LayoutManager;
-import plg.JmpSideFlowRenderer;
+import plg.AbstractRenderPlugin;
 
 public class ImageWorker implements Runnable {
     private int leftMeasTh = 0;
-    protected volatile VolatileImage offScreenImage;
+    protected volatile BufferedImage offScreenImage;
     protected Graphics2D offScreenGraphic;
     private boolean isExec = false;
     private int width = 0;
@@ -72,7 +71,7 @@ public class ImageWorker implements Runnable {
 
     @Override
     public void run() {
-        if (JmpSideFlowRenderer.MainWindow.isVisible() == false) {
+        if (AbstractRenderPlugin.MainWindow.isVisible() == false) {
             if (offScreenImage != null) {
                 //イメージオブジェクトのメモリを解放
                 disposeImage();
@@ -80,10 +79,9 @@ public class ImageWorker implements Runnable {
             return;
         }
         
-        GraphicsConfiguration gc = JmpSideFlowRenderer.MainWindow.getGraphicsConfiguration();
-        if (offScreenImage == null || offScreenImage.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE) {
+        if (offScreenImage == null) {
             // ノーツ画像
-            offScreenImage = LayoutManager.getInstance().createLayerImage(getImageWidth(), getImageHeight());
+            offScreenImage = LayoutManager.getInstance().createBufferdImage(getImageWidth(), getImageHeight());
             offScreenGraphic = offScreenImage.createGraphics();
         }
 

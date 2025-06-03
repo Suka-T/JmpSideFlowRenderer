@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import plg.SystemProperties;
+
 public class LayoutConfig {
     
     public static final String LC_PLAYER_BGCOLOR = "player.bgcolor";
@@ -143,7 +145,16 @@ public class LayoutConfig {
         str = props.getProperty(LC_CURSOR_EFFE_COLOR);
         if (str != null) cursorEffeColor = str2ColorCode(str);
         str = props.getProperty(LC_CURSOR_POS);
-        if (str != null) tickBarPosition = Integer.parseInt(str);
+        
+        if (str == null) {
+        }
+        else if (str.equalsIgnoreCase("top")) {
+        	tickBarPosition = SystemProperties.getInstance().getKeyWidth();
+        }
+        else {
+        	tickBarPosition = 420;
+        }
+        
         str = props.getProperty(LC_PB_COLOR);
         if (str != null) pbBaseLineColor = str2ColorCode(str);
         str = props.getProperty(LC_PB_VISIBLE);

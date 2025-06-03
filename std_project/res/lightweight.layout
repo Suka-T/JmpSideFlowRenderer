@@ -1,12 +1,11 @@
 cursor.color=DDDD00
 cursor.effect.color=FFFFFF
-cursor.position=420
 cursor.type=keyboard
 info.visible=true
+notes.colasign=none
 notes.design=flat
 pb.basecolor=969696
 pb.visible=false
-notes.colasign=asign
 notes.color1=00FF00
 notes.color2=FFFF00
 notes.color3=00FFFF
