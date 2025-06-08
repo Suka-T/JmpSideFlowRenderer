@@ -90,6 +90,8 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 	protected KeyInfo[] aHakken = null;
 	protected KeyInfo[] aKokken = null;
+	
+	protected boolean isFirstRendering = false;
 
 	public int getOrgWidth() {
 		return orgDispWidth;
@@ -337,9 +339,31 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 	}
 
 	public void loadFile() {
+		isFirstRendering = true;
+		
 		setLeftMeas(0);
 		calcDispMeasCount();
 		resetPage();
+		
+		int numOfWorker = imageWorkerMgr.getNumOfWorker();
+		int finished = 0;
+		try {
+			while(numOfWorker == finished) {
+				finished = 0;
+				for (int i=0; i<numOfWorker; i++) {
+					if (imageWorkerMgr.getWorker(i).isExec() == false) {
+						finished++;
+					}
+				}
+				Thread.sleep(10);
+			}
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		finally {
+			isFirstRendering = false;
+		}
 	}
 
 	public void adjustTickBar() {
@@ -385,7 +409,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		int paneWidth = getContentPane().getWidth();
 		int paneHeight = getContentPane().getHeight();
 
-		if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true) {
+		if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true && isFirstRendering == false) {
 			g.setColor(LayoutManager.getInstance().getBackColor());
 			g.fillRect(0, 0, paneWidth, paneHeight);
 			g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
@@ -412,7 +436,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			cnt++;
 			stringHeight = fm.getHeight();
 			g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
-		} else if (sequence == null) {
+		} else if (sequence == null && isFirstRendering == false) {
 			g.setColor(LayoutManager.getInstance().getBackColor());
 			g.fillRect(0, 0, paneWidth, paneHeight);
 			g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
@@ -428,7 +452,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			stringWidth = fm.stringWidth(sb.toString());
 			stringHeight = fm.getHeight();
 			g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
-		} else if (imageWorkerMgr.getNotesImage() == null) {
+		} else if (imageWorkerMgr.getNotesImage() == null || isFirstRendering == true) {
 			// 描画が追いついていない
 			g.setColor(LayoutManager.getInstance().getBackColor());
 			g.fillRect(0, 0, paneWidth, paneHeight);
@@ -937,14 +961,14 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 				String path1 = files.get(0).getPath();
 				String path2 = files.get(1).getPath();
 				if (Utility.checkExtensions(path1, exMidi.split(",")) == true) {
-					JMPCoreAccessor.getFileManager().loadDualFile(path1, path2);
+					JMPCoreAccessor.getFileManager().loadDualFileToPlay(path1, path2);
 				} else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
-					JMPCoreAccessor.getFileManager().loadDualFile(path2, path1);
+					JMPCoreAccessor.getFileManager().loadDualFileToPlay(path2, path1);
 				}
 			} else {
 				String path = files.get(0).getPath();
 				if (Utility.checkExtensions(path, JmpSideFlowRenderer.Extensions.split(",")) == true) {
-					JMPCoreAccessor.getFileManager().loadFile(path);
+					JMPCoreAccessor.getFileManager().loadFileToPlay(path);
 				}
 			}
 		}
