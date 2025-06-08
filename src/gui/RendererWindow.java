@@ -954,6 +954,11 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 		// 一番先頭のファイルを取得
 		if ((files != null) && (files.size() > 0)) {
+			
+			if (JMPCoreAccessor.getSoundManager().isPlay() == true) {
+				JMPCoreAccessor.getSoundManager().stop();
+			}
+			
 			if (files.size() >= 2) {
 
 				String exMidi = JMPCoreAccessor.getSystemManager()
