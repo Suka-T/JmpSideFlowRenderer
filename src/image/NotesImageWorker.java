@@ -8,14 +8,11 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sound.midi.Sequence;
-
 import gui.RendererWindow;
 import jlib.core.JMPCoreAccessor;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.MappedParseFunc;
-import jlib.midi.MappedSequence;
 import jlib.midi.MidiByte;
 import layout.LayoutConfig;
 import layout.LayoutManager;
@@ -73,8 +70,7 @@ public class NotesImageWorker extends ImageWorker {
 	@Override
 	public void run() {
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		Sequence sequence = midiUnit.getSequence();
-		if (sequence == null) {
+		if (midiUnit.isValidSequence() == false) {
 			return;
 		}
 
@@ -94,8 +90,7 @@ public class NotesImageWorker extends ImageWorker {
 	@Override
 	protected void paintImage(Graphics g) {
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		Sequence sequence = midiUnit.getSequence();
-		if (sequence == null) {
+		if (midiUnit.isValidSequence() == false) {
 			return;
 		}
 
@@ -111,18 +106,19 @@ public class NotesImageWorker extends ImageWorker {
 		int x = mainWindow.getZeroPosition();
 		int y = mainWindow.getMeasCellHeight() * 3;
 		if (LayoutManager.getInstance().isVisibleHorizonBorder() == true) {
-			while (y <= getImageHeight()) {
+			y = getImageHeight();
+			while (y >= 0) {
 				g.drawLine(x, y, x + getImageWidth(), y);
-				y += mainWindow.getMeasCellHeight() * 12;
+				y -= mainWindow.getMeasCellHeight() * 12;
 			}
 		}
 		x = mainWindow.getZeroPosition();
 		y = 0;
-		while (x <= getImageWidth()) {
-			if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
+		if (LayoutManager.getInstance().isVisibleVerticalBorder() == true) {
+			while (x <= getImageWidth()) {
 				g.drawLine(x, y, x, y + getImageHeight());
+				x += (mainWindow.getMeasCellWidth() * 4);
 			}
-			x += mainWindow.getMeasCellWidth();
 		}
 		g2d.setStroke(normalStroke);
 	}
@@ -140,9 +136,8 @@ public class NotesImageWorker extends ImageWorker {
 		Graphics2D g2d = (Graphics2D) g;
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
 		INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-		MappedSequence sequence = (MappedSequence) midiUnit.getSequence();
 		
-		if (sequence == null) {
+		if (midiUnit.isValidSequence() == false) {
 			return;
 		}
 
@@ -159,12 +154,12 @@ public class NotesImageWorker extends ImageWorker {
 		topOffset = (mainWindow.getMeasCellHeight() * (127 - mainWindow.getTopMidiNumber()));
 		offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
 		int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
-		int offsetCoordXtoTick = offsetCoordXtoMeas * sequence.getResolution();
+		int offsetCoordXtoTick = offsetCoordXtoMeas * midiUnit.getResolution();
 		int totalMeasCount = (int) ((double) mainWindow.getDispMeasCount() * 2.0);
 
 		long absLeftMeas = -(leftMeas);
-		long vpLenTick = (totalMeasCount * sequence.getResolution());
-		vpStartTick = absLeftMeas * sequence.getResolution() - offsetCoordXtoTick;
+		long vpLenTick = (totalMeasCount * midiUnit.getResolution());
+		vpStartTick = absLeftMeas * midiUnit.getResolution() - offsetCoordXtoTick;
 		vpEndTick = vpStartTick + vpLenTick + (offsetCoordXtoTick * 2);
 
 		int pbMaxHeight = 100;
@@ -214,7 +209,8 @@ public class NotesImageWorker extends ImageWorker {
 			g2d.setStroke(normalStroke);
 
 			try {
-				sequence.parse((short) trkIndex, new MappedParseFunc(mpStartTick, mpEndTick) {
+				
+				midiUnit.parseMappedByteBuffer((short) trkIndex, new MappedParseFunc(mpStartTick, mpEndTick) {
 
 					@Override
 					public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
@@ -260,7 +256,6 @@ public class NotesImageWorker extends ImageWorker {
 	private void paintNt(NotesPainter.Context nContext, int trk, int leftMeas, long endTick, int channel, int data1, int data2) {
 		// Note OFF
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		MappedSequence sequence = (MappedSequence) midiUnit.getSequence();
 		long endEvent = endTick;
 		long startEvent = noteOnEvents[channel][data1].tick;
 		noteOnEvents[channel][data1].init();
@@ -270,15 +265,15 @@ public class NotesImageWorker extends ImageWorker {
 			// 無効データは何もしない 
 		} else {
 			// 描画開始
-			int startMeas = (int) ((double) startEvent / (double) sequence.getResolution())
+			int startMeas = (int) ((double) startEvent / (double) midiUnit.getResolution())
 					+ leftMeas;
-			int startOffset = (int) ((double) startEvent % (double) sequence.getResolution());
+			int startOffset = (int) ((double) startEvent % (double) midiUnit.getResolution());
 			nContext.x = (int) (mainWindow.getMeasCellWidth()
-					* (startMeas + (double) startOffset / sequence.getResolution())) + offsetCoordX;
+					* (startMeas + (double) startOffset / midiUnit.getResolution())) + offsetCoordX;
 			nContext.y = ((127 - data1) * mainWindow.getMeasCellHeight()) + topOffset;
 
 			nContext.w = (int) (mainWindow.getMeasCellWidth()
-					* (double) (endEvent - startEvent) / sequence.getResolution());
+					* (double) (endEvent - startEvent) / midiUnit.getResolution());
 			nContext.h = mainWindow.getMeasCellHeight();
 
 			if (nContext.w < 2) {

@@ -28,7 +28,6 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.sound.midi.Sequence;
 import javax.swing.JFrame;
 import javax.swing.TransferHandler;
 
@@ -368,8 +367,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 	public void adjustTickBar() {
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		Sequence seq = midiUnit.getSequence();
-		if (seq == null) {
+		if (midiUnit.isValidSequence() == false) {
 			return;
 		}
 
@@ -398,8 +396,6 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
 
 		/* ノーツ描画 */
-		Sequence sequence = midiUnit.getSequence();
-
 		GraphicsConfiguration gc = getGraphicsConfiguration();
 		if (orgScreenImage == null || orgScreenImage.validate(gc) == VolatileImage.IMAGE_INCOMPATIBLE) {
 			orgScreenImage = LayoutManager.getInstance().createLayerImage(getOrgWidth(), getOrgHeight());
@@ -436,7 +432,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			cnt++;
 			stringHeight = fm.getHeight();
 			g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
-		} else if (sequence == null && isFirstRendering == false) {
+		} else if (midiUnit.isValidSequence() == false && isFirstRendering == false) {
 			g.setColor(LayoutManager.getInstance().getBackColor());
 			g.fillRect(0, 0, paneWidth, paneHeight);
 			g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
@@ -637,9 +633,6 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
 
-		/* ノーツ描画 */
-		Sequence sequence = midiUnit.getSequence();
-
 		// フリップ
 		calcDispMeasCount();
 		if (midiUnit.isRunning() == true) {
@@ -649,9 +642,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		// 現在の画面に表示する相対tick位置を求める 
 		BufferedImage notesImg = (BufferedImage) imageWorkerMgr.getNotesImage();
 		long tickPos = midiUnit.getTickPosition();
-		long relPosTick = tickPos + sequence.getResolution() * getLeftMeas();
+		long relPosTick = tickPos + midiUnit.getResolution() * getLeftMeas();
 		// 相対tick位置を座標に変換(TICK × COORD / RESOLUTION)
-		int tickX = (int) ((double) relPosTick * (double) getMeasCellWidth() / (double) sequence.getResolution());
+		int tickX = (int) ((double) relPosTick * (double) getMeasCellWidth() / (double) midiUnit.getResolution());
 		int effePickX = tickX + LayoutManager.getInstance().getTickBarPosition();
 		g.drawImage(notesImg, -tickX, 0, null);
 
@@ -754,6 +747,14 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			g2d.drawLine(tickBarPosition - 1, 0, tickBarPosition - 1, getOrgHeight());
 			g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
 			g2d.drawLine(tickBarPosition + 1, 0, tickBarPosition + 1, getOrgHeight());
+			
+			g2d.setColor(Color.BLACK);
+			for (int i = 0; i < 15; i++) {
+				float alpha = (1.0f - ((float) i / 15.0f)) * 0.9f;
+				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+				g2d.fillRect(getOrgWidth() - (4 * (i + 1)), 0, 4, getOrgHeight());
+			}
+			g2d.setComposite(AlphaComposite.SrcOver);
 		}
 	}
 
@@ -761,7 +762,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		calcDispMeasCount();
 
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getSequence().getResolution();
+		int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getResolution();
 		setLeftMeas(-startMeas);
 
 		imageWorkerMgr.reset(getLeftMeas(), dispMeasCount, NEXT_FLIP_COUNT);
@@ -769,7 +770,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 	private void flipPage() {
 		IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
-		int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getSequence().getResolution();
+		int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getResolution();
 		int offsetLeftMeas = getLeftMeas();
 		offsetLeftMeas = (offsetLeftMeas < 0) ? -(offsetLeftMeas) : offsetLeftMeas;
 		int flipMergin = -(NEXT_FLIP_COUNT);
@@ -824,7 +825,12 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			}
 		} else if (e.getButton() == MouseEvent.BUTTON3) {
 			if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-				JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
+				if (SystemProperties.getInstance().isDebugMode() == true) {
+					JMPCoreAccessor.getWindowManager().getMainWindow().showWindow();
+				}
+				else {
+					JMPCoreAccessor.getWindowManager().getWindow(IWindowManager.WINDOW_NAME_MIDI_SETUP).showWindow();
+				}
 			}
 		}
 	}
