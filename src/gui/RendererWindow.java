@@ -34,6 +34,7 @@ import javax.swing.TransferHandler;
 import function.Utility;
 import image.ImagerWorkerManager;
 import image.NotesImageWorker;
+import jlib.core.ISoundManager;
 import jlib.core.ISystemManager;
 import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
@@ -339,6 +340,20 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 	public void loadFile() {
 		isFirstRendering = true;
+		
+		if (SystemProperties.getInstance().isNotesWidthAuto() == true) {
+			ISoundManager sm = JMPCoreAccessor.getSoundManager();
+			IMidiUnit midiUnit = sm.getMidiUnit();
+			double fbpm = midiUnit.getFirstTempoInBPM();
+			int newCellWidth = (int) (800.0 * (120.0 / fbpm));
+			if (newCellWidth < 160) {
+				newCellWidth = 160;
+			}
+			else if (newCellWidth > 1200) {
+				newCellWidth = 1200;
+			}
+			setMeasCellWidth(newCellWidth);
+		}
 		
 		setLeftMeas(0);
 		calcDispMeasCount();

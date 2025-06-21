@@ -12,7 +12,7 @@ public class SystemProperties {
 	public static final String SYSP_LAYER_ORDER = "renderer.layer.order";
 	public static final String SYSP_LAYOUT_FILE = "layout.file";
 	public static final String SYSP_KEYWIDTH = "renderer.key.width";
-	public static final String SYSP_NOTES_WIDTH = "renderer.notes.width";
+	public static final String SYSP_NOTES_SPEED = "renderer.notes.speed";
 	
 	public static int DEFAULT_KEY_WIDTH = 50;
 	
@@ -36,6 +36,7 @@ public class SystemProperties {
 	private SyspLayerOrder layerOrder = SyspLayerOrder.DESC;
 	private int keyWidth = DEFAULT_KEY_WIDTH;
 	private int notesWidth = 420;
+	private boolean notesWidthAuto = false;
 	
 	private boolean debugMode = false;
 
@@ -108,17 +109,32 @@ public class SystemProperties {
         	}
         }
         
-        str = props.getProperty(SYSP_NOTES_WIDTH);
+        boolean notesSpeedIsAuto = true;
+        double notesSpeed = 50.0;
+        str = props.getProperty(SYSP_NOTES_SPEED);
         if (str == null) {
+        }
+        else if (str.equalsIgnoreCase("auto") == true) {
+        	notesSpeedIsAuto = true;
         }
         else {
 	        try {
-	        	notesWidth = Integer.parseInt(str);
+	        	notesSpeedIsAuto = false;
+	        	notesSpeed = Double.parseDouble(str);
+	        	if (notesSpeed < 1.0) {
+	        		notesSpeed = 1.0;
+	        	}
+	        	else if (notesSpeed > 100.0) {
+	        		notesSpeed = 100.0;
+	        	}
 	        }catch (Exception e) {
-	        	notesWidth = 420;
+	        	notesSpeedIsAuto = true;
+	        	notesSpeed = 50.0;
 			}
         }
         
+        notesWidthAuto = notesSpeedIsAuto;
+        notesWidth = 160 + (int) ((double)(1200 - 160) * (notesSpeed / 100.0));
         if (notesWidth < 160) {
         	notesWidth = 160;
         }
@@ -164,5 +180,8 @@ public class SystemProperties {
 	}
 	public int getNotesWidth() {
 		return notesWidth;
+	}
+	public boolean isNotesWidthAuto() {
+		return notesWidthAuto;
 	}
 }
