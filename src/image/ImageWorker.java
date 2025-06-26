@@ -26,7 +26,8 @@ public class ImageWorker implements Runnable {
     }
     
     public void start() {
-        service = Executors.newSingleThreadExecutor();
+    	int cores = Runtime.getRuntime().availableProcessors();
+        service = Executors.newFixedThreadPool(Math.max(1, cores - 1));
     }
     
     public void stop() {

@@ -22,7 +22,7 @@ import plg.SystemProperties;
 import plg.SystemProperties.SyspLayerOrder;
 
 public class NotesImageWorker extends ImageWorker {
-	public static final int DISP_WIDTH_COUNT = 8;
+	public static final int DISP_WIDTH_COUNT = 10;
 	public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
 	public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
 
@@ -282,10 +282,11 @@ public class NotesImageWorker extends ImageWorker {
 
 			if (LayoutManager.getInstance().getColorRule() == LayoutConfig.EColorRule.Channel) {
 				nContext.bgColor = LayoutManager.getInstance().getNotesColor(channel);
+				nContext.bdColor = LayoutManager.getInstance().getNotesBorderColor(channel);
 			} else {
 				nContext.bgColor = LayoutManager.getInstance().getNotesColor(trk);
+				nContext.bdColor = LayoutManager.getInstance().getNotesBorderColor(trk);
 			}
-			nContext.bdColor = LayoutManager.getInstance().getBackColor();
 			
 			int x1 = nContext.x;
 			int x2 = nContext.x + nContext.w - 1;

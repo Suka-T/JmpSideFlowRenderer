@@ -22,6 +22,7 @@ public class LayoutManager {
     public static final int DEFAULT_TICK_MEAS = 1;
     
     private List<Color> notesColor = null;
+    private List<Color> notesBorderColor = null;
     private Color cursorColor = null;
     private Color cursorEffeColor = null;
     
@@ -56,6 +57,7 @@ public class LayoutManager {
         rootCanvas = canvas;
         
         notesColor = new ArrayList<Color>();
+        notesBorderColor = new ArrayList<Color>();
         ISystemManager sm = JMPCoreAccessor.getSystemManager();
         
         if (layout.notesColorCodes.isEmpty() == true) {
@@ -84,6 +86,10 @@ public class LayoutManager {
         	for (String s : layout.notesColorCodes) {
         		notesColor.add(Utility.convertCodeToHtmlColor(s));
         	}
+        }
+        
+        for (Color nc : notesColor) {
+        	notesBorderColor.add(Utility.convertHighLightColor(nc, -100));
         }
         
         cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
@@ -116,6 +122,10 @@ public class LayoutManager {
     
     public Color getNotesColor(int index) {
     	return notesColor.get(index % notesColor.size());
+    }
+    
+    public Color getNotesBorderColor(int index) {
+    	return notesBorderColor.get(index % notesBorderColor.size());
     }
 
     public LayoutConfig.ECursorType getCursorType() {

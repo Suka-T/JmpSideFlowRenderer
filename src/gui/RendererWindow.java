@@ -63,13 +63,10 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
 	protected ImagerWorkerManager imageWorkerMgr = null;
 
-	protected int orgDispWidth = DEFAULT_WINDOW_WIDTH;
-	protected int orgDispHeight = DEFAULT_WINDOW_HEIGHT;
-
 	protected int leftMeas = 0;
 	protected int zeroPosition = 0;
 	protected int measCellWidth = 420;
-	protected int measCellHeight = orgDispHeight / 128;//5;
+	protected int measCellHeight = 0; //orgDispHeight / 128;//5;
 	protected int dispMeasCount = 0;
 
 	//private int topMidiNumber = 128 - ((orgDispHeight - (measCellHeight * 128)) / measCellHeight) / 2;
@@ -94,11 +91,11 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 	protected boolean isFirstRendering = false;
 
 	public int getOrgWidth() {
-		return orgDispWidth;
+		return DEFAULT_WINDOW_WIDTH;
 	}
 
 	public int getOrgHeight() {
-		return orgDispHeight;
+		return DEFAULT_WINDOW_HEIGHT;
 	}
 
 	/**
@@ -143,6 +140,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		});
 		
 		measCellWidth = SystemProperties.getInstance().getNotesWidth();
+		measCellHeight = getOrgHeight() / 128;//5;
 
 		LayoutManager.getInstance().initialize(canvas);
 		delayNano = 1_000_000_000 / SystemProperties.getInstance().getFixedFps();
@@ -345,7 +343,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 			ISoundManager sm = JMPCoreAccessor.getSoundManager();
 			IMidiUnit midiUnit = sm.getMidiUnit();
 			double fbpm = midiUnit.getFirstTempoInBPM();
-			int newCellWidth = (int) (800.0 * (120.0 / fbpm));
+			int newCellWidth = (int) (480.0 * (120.0 / fbpm));
 			if (newCellWidth < 160) {
 				newCellWidth = 160;
 			}
@@ -362,7 +360,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 		int numOfWorker = imageWorkerMgr.getNumOfWorker();
 		int finished = 0;
 		try {
-			while(numOfWorker == finished) {
+			while(numOfWorker > finished) {
 				finished = 0;
 				for (int i=0; i<numOfWorker; i++) {
 					if (imageWorkerMgr.getWorker(i).isExec() == false) {
