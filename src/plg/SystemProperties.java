@@ -13,6 +13,7 @@ public class SystemProperties {
 	public static final String SYSP_LAYOUT_FILE = "layout.file";
 	public static final String SYSP_KEYWIDTH = "renderer.key.width";
 	public static final String SYSP_NOTES_SPEED = "renderer.notes.speed";
+	public static final String SYSP_NOTES_IMAGE_CNT = "renderer.image.count";
 	
 	public static int DEFAULT_KEY_WIDTH = 50;
 	
@@ -37,6 +38,7 @@ public class SystemProperties {
 	private int keyWidth = DEFAULT_KEY_WIDTH;
 	private int notesWidth = 420;
 	private boolean notesWidthAuto = false;
+	private int notesImageCount = 10;
 	
 	private boolean debugMode = false;
 
@@ -152,6 +154,20 @@ public class SystemProperties {
         		setKeyWidth(DEFAULT_KEY_WIDTH);
 			}
         }
+        
+        str = props.getProperty(SYSP_NOTES_IMAGE_CNT);
+        if (str != null) {
+        	try {
+        		notesImageCount = Integer.parseInt(str);
+        		if (notesImageCount < 3) {
+        			notesImageCount = 3;
+        		}
+        		else if (notesImageCount > 30) {
+        			notesImageCount = 30;
+        		}
+        	} catch (Exception e) {
+			}
+        }
 	}
 
 	public int getWorkerNum() {
@@ -183,5 +199,8 @@ public class SystemProperties {
 	}
 	public boolean isNotesWidthAuto() {
 		return notesWidthAuto;
+	}
+	public int getNotesImageCount() {
+		return notesImageCount;
 	}
 }

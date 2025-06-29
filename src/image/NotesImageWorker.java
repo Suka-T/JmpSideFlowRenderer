@@ -22,7 +22,6 @@ import plg.SystemProperties;
 import plg.SystemProperties.SyspLayerOrder;
 
 public class NotesImageWorker extends ImageWorker {
-	public static final int DISP_WIDTH_COUNT = 10;
 	public static final Color FIX_FOCUS_NOTES_BGCOLOR = Color.WHITE;
 	public static final Color FIX_FOCUS_NOTES_BDCOLOR = Color.GREEN;
 
@@ -84,7 +83,7 @@ public class NotesImageWorker extends ImageWorker {
 
 	@Override
 	public int getImageWidth() {
-		return (getWidth() * DISP_WIDTH_COUNT) + (getWidth() / 2);
+		return (getWidth() * SystemProperties.getInstance().getNotesImageCount()) + (getWidth() / 2);
 	}
 
 	@Override

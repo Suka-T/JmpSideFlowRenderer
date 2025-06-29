@@ -89,7 +89,7 @@ public class LayoutManager {
         }
         
         for (Color nc : notesColor) {
-        	notesBorderColor.add(Utility.convertHighLightColor(nc, -100));
+        	notesBorderColor.add(Utility.convertHighLightColor(nc, -128));
         }
         
         cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
@@ -126,6 +126,10 @@ public class LayoutManager {
     
     public Color getNotesBorderColor(int index) {
     	return notesBorderColor.get(index % notesBorderColor.size());
+    }
+    
+    public List<Color> getNotesBorderColors() {
+    	return notesBorderColor;
     }
 
     public LayoutConfig.ECursorType getCursorType() {
