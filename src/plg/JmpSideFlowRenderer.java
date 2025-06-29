@@ -1,4 +1,5 @@
 package plg;
+
 public class JmpSideFlowRenderer extends AbstractRenderPlugin {
 
     public static void main(String[] args) {
@@ -6,13 +7,13 @@ public class JmpSideFlowRenderer extends AbstractRenderPlugin {
     }
 
     public JmpSideFlowRenderer() {
-    	super();
+        super();
     }
-    
+
     @Override
     public void initialize() {
-    	super.initialize();
-    	
-    	AbstractRenderPlugin.MainWindow.setTitle("JSFR");
+        super.initialize();
+
+        AbstractRenderPlugin.MainWindow.setTitle("JSFR");
     }
 }

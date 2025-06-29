@@ -1,4 +1,5 @@
 package layout;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,7 +12,7 @@ import java.util.Properties;
 import plg.SystemProperties;
 
 public class LayoutConfig {
-    
+
     public static final String LC_PLAYER_BGCOLOR = "player.bgcolor";
     public static final String LC_PLAYER_BDCOLOR = "player.bdcolor";
     public static final String LC_PLAYER_COLOR_RULE = "player.colorrule";
@@ -27,63 +28,71 @@ public class LayoutConfig {
     public static final String LC_NOTES_COLOR_ASIGN = "notes.colasign";
     public static final String LC_NOTES_COLOR = "notes.color";
     public static final String LC_INFO_VISIBLE = "info.visible";
-    
+
     public static enum ENotesDesign {
-        Normal,
-        Flat,
-        Arc;
-        
+        Normal, Flat, Arc;
+
         @Override
         public String toString() {
             switch (this) {
-                case Normal: return "normal";
-                case Flat: return "flat";
-                case Arc: return "arc";
-                default: return "";
+                case Normal:
+                    return "normal";
+                case Flat:
+                    return "flat";
+                case Arc:
+                    return "arc";
+                default:
+                    return "";
             }
         }
     }
-    
+
     public static enum ECursorType {
-        Keyboard,
-        Line;
-        
+        Keyboard, Line;
+
         @Override
         public String toString() {
             switch (this) {
-                case Keyboard: return "keyboard";
-                case Line: return "line";
-                default: return "";
+                case Keyboard:
+                    return "keyboard";
+                case Line:
+                    return "line";
+                default:
+                    return "";
             }
         }
     }
-    
+
     public static enum EColorRule {
-        Channel,
-        Track;
-        
+        Channel, Track;
+
         @Override
         public String toString() {
             switch (this) {
-                case Channel: return "channel";
-                case Track: return "track";
-                default: return "";
+                case Channel:
+                    return "channel";
+                case Track:
+                    return "track";
+                default:
+                    return "";
             }
         }
     }
-    
+
     public static enum EColorAsign {
-        Inherit,
-        Asign,
-    	None;
-        
+        Inherit, Asign, None;
+
         @Override
         public String toString() {
             switch (this) {
-                case Inherit: return "inherit";
-                case Asign: return "asign";
-                case None: return "none";
-                default: return "";
+                case Inherit:
+                    return "inherit";
+                case Asign:
+                    return "asign";
+                case None:
+                    return "none";
+                default:
+                    return "";
             }
         }
     }
@@ -104,32 +113,36 @@ public class LayoutConfig {
     public EColorRule colorRule = EColorRule.Track;
     public EColorAsign colorAsign = EColorAsign.Asign;
     public List<String> notesColorCodes;
-    
+
     public LayoutConfig() {
-    	notesColorCodes = new ArrayList<String>();
+        notesColorCodes = new ArrayList<String>();
     }
 
     public void read(File file) throws FileNotFoundException, IOException {
         Properties props = new Properties();
         props.load(new FileInputStream(file));
-        
+
         String str = null;
         str = props.getProperty(LC_PLAYER_BGCOLOR);
-        if (str != null) prBackColor = str2ColorCode(str);
+        if (str != null)
+            prBackColor = str2ColorCode(str);
         str = props.getProperty(LC_PLAYER_BDCOLOR);
-        if (str != null) prBorderColor = str2ColorCode(str);
+        if (str != null)
+            prBorderColor = str2ColorCode(str);
         str = props.getProperty(LC_PLAYER_BORDER_VERTICAL_VISIBLE);
-        if (str != null) isVisibleVerticalBorder = Boolean.parseBoolean(str);
+        if (str != null)
+            isVisibleVerticalBorder = Boolean.parseBoolean(str);
         str = props.getProperty(LC_PLAYER_BORDER_HORIZON_VISIBLE);
-        if (str != null) isVisibleHorizonBorder = Boolean.parseBoolean(str);
+        if (str != null)
+            isVisibleHorizonBorder = Boolean.parseBoolean(str);
         str = props.getProperty(LC_PLAYER_COLOR_RULE);
         if (str == null) {
         }
         else if (str.equalsIgnoreCase("channel")) {
-        	colorRule = EColorRule.Channel;
+            colorRule = EColorRule.Channel;
         }
         else if (str.equalsIgnoreCase("track")) {
-        	colorRule = EColorRule.Track;
+            colorRule = EColorRule.Track;
         }
         str = props.getProperty(LC_CURSOR_TYPE);
         if (str == null) {
@@ -141,64 +154,69 @@ public class LayoutConfig {
             cursorType = ECursorType.Line;
         }
         str = props.getProperty(LC_CURSOR_COLOR);
-        if (str != null) cursorMainColor = str2ColorCode(str);
+        if (str != null)
+            cursorMainColor = str2ColorCode(str);
         str = props.getProperty(LC_CURSOR_EFFE_COLOR);
-        if (str != null) cursorEffeColor = str2ColorCode(str);
+        if (str != null)
+            cursorEffeColor = str2ColorCode(str);
         str = props.getProperty(LC_CURSOR_POS);
-        
+
         if (str == null) {
         }
         else if (str.equalsIgnoreCase("top")) {
-        	tickBarPosition = SystemProperties.getInstance().getKeyWidth();
+            tickBarPosition = SystemProperties.getInstance().getKeyWidth();
         }
         else {
-        	tickBarPosition = 420;
+            tickBarPosition = 420;
         }
-        
+
         str = props.getProperty(LC_PB_COLOR);
-        if (str != null) pbBaseLineColor = str2ColorCode(str);
+        if (str != null)
+            pbBaseLineColor = str2ColorCode(str);
         str = props.getProperty(LC_PB_VISIBLE);
-        if (str != null) isVisiblePb = Boolean.parseBoolean(str);
+        if (str != null)
+            isVisiblePb = Boolean.parseBoolean(str);
         str = props.getProperty(LC_INFO_VISIBLE);
-        if (str != null) isVisibleMonitorStr = Boolean.parseBoolean(str);
-        
+        if (str != null)
+            isVisibleMonitorStr = Boolean.parseBoolean(str);
+
         str = props.getProperty(LC_NOTES_DESIGN);
         if (str == null) {
         }
         else if (str.equalsIgnoreCase(ENotesDesign.Normal.toString())) {
-        	notessDesign = ENotesDesign.Normal;
+            notessDesign = ENotesDesign.Normal;
         }
         else if (str.equalsIgnoreCase(ENotesDesign.Flat.toString())) {
-        	notessDesign = ENotesDesign.Flat;
+            notessDesign = ENotesDesign.Flat;
         }
         else if (str.equalsIgnoreCase(ENotesDesign.Arc.toString())) {
-        	notessDesign = ENotesDesign.Arc;
+            notessDesign = ENotesDesign.Arc;
         }
         str = props.getProperty(LC_NOTES_COLOR_ASIGN);
         if (str == null) {
         }
         else if (str.equalsIgnoreCase(EColorAsign.Asign.toString())) {
-        	colorAsign = EColorAsign.Asign;
+            colorAsign = EColorAsign.Asign;
         }
         else if (str.equalsIgnoreCase(EColorAsign.Inherit.toString())) {
-        	colorAsign = EColorAsign.Inherit;
+            colorAsign = EColorAsign.Inherit;
         }
         else if (str.equalsIgnoreCase(EColorAsign.None.toString())) {
-        	colorAsign = EColorAsign.None;
+            colorAsign = EColorAsign.None;
         }
-        
+
         notesColorCodes.clear();
         StringBuilder sb = new StringBuilder(64); // 初期容量を指定
-        for (int i=1; i<=512; i++) {
+        for (int i = 1; i <= 512; i++) {
             sb.setLength(0);
             sb.append(LC_NOTES_COLOR).append(i);
             str = props.getProperty(sb.toString());
             if (str != null) {
-            	notesColorCodes.add(str2ColorCode(str));
+                notesColorCodes.add(str2ColorCode(str));
             }
         }
     }
-    
+
     public void write(File file) throws IOException {
         Properties props = new Properties();
         props.setProperty(LC_PLAYER_BGCOLOR, colorCode2str2(prBackColor));
@@ -214,27 +232,27 @@ public class LayoutConfig {
         props.setProperty(LC_PB_VISIBLE, String.valueOf(isVisiblePb));
         props.setProperty(LC_INFO_VISIBLE, String.valueOf(isVisibleMonitorStr));
         props.setProperty(LC_NOTES_DESIGN, notessDesign.toString());
-        
+
         props.setProperty(LC_NOTES_COLOR_ASIGN, colorAsign.toString());
         StringBuilder sb = new StringBuilder(64); // 初期容量を指定
-        for (int i=0; i<notesColorCodes.size(); i++) {
+        for (int i = 0; i < notesColorCodes.size(); i++) {
             sb.setLength(0);
             sb.append(LC_NOTES_COLOR).append(i + 1);
             props.setProperty(sb.toString(), colorCode2str2(notesColorCodes.get(i)));
         }
-        
+
         try (FileOutputStream out = new FileOutputStream(file)) {
             props.store(out, "Layout");
         }
     }
-    
+
     private String colorCode2str2(String code) {
         if (code.startsWith("#")) {
             code = code.substring(1);
         }
         return code;
     }
-    
+
     private String str2ColorCode(String str) {
         return "#" + str;
     }

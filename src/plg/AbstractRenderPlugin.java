@@ -1,4 +1,5 @@
 package plg;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +24,7 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
 
     public AbstractRenderPlugin() {
     }
-    
+
     protected void createMainWindow() {
         MainWindow = new JsfrRendererWindow();
         MainWindow.init();
@@ -32,41 +33,41 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     @Override
     public void initialize() {
         createExtensions();
-        
+
         Path folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_DATA_DIR, this));
         Path fullPath = folder.resolve("renderer.properties");
         try {
-        	SystemProperties.getInstance().read(new File(fullPath.toString()));
+            SystemProperties.getInstance().read(new File(fullPath.toString()));
         }
         catch (IOException e1) {
-            //e1.printStackTrace();
+            // e1.printStackTrace();
         }
-        
+
         try {
-        	
-        	String layoutFilename = SystemProperties.getInstance().getLayoutFile();
+
+            String layoutFilename = SystemProperties.getInstance().getLayoutFile();
             if (!layoutFilename.contains(".")) {
-            	layoutFilename += ".layout";
+                layoutFilename += ".layout";
             }
-            
+
             folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_RES_DIR, this));
-        	fullPath = folder.resolve(layoutFilename);
+            fullPath = folder.resolve(layoutFilename);
             LayoutManager.getInstance().read(new File(fullPath.toString()));
         }
         catch (IOException e1) {
-            //e1.printStackTrace();
+            // e1.printStackTrace();
         }
-        
+
         if (SwingUtilities.isEventDispatchThread()) {
-        	createMainWindow();
+            createMainWindow();
         }
         else {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-    
+
                     @Override
                     public void run() {
-                    	createMainWindow();
+                        createMainWindow();
                     }
                 });
             }
@@ -137,7 +138,7 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
 
     @Override
     public void startSequencer() {
-        //MainWindow.adjustTickBar();
+        // MainWindow.adjustTickBar();
     }
 
     @Override
@@ -156,9 +157,9 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
         return Extensions;
     }
 
-	@Override
-	public void updateSequencer() {
-		MainWindow.adjustTickBar();
-	}
+    @Override
+    public void updateSequencer() {
+        MainWindow.adjustTickBar();
+    }
 
 }

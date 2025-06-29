@@ -1,4 +1,5 @@
 package image;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -20,31 +21,31 @@ public class ImageWorker implements Runnable {
 
     public ImageWorker(int width, int height) {
         super();
-        
+
         this.width = width;
         this.height = height;
     }
-    
+
     public void start() {
-    	int cores = Runtime.getRuntime().availableProcessors();
+        int cores = Runtime.getRuntime().availableProcessors();
         service = Executors.newFixedThreadPool(Math.max(1, cores - 1));
     }
-    
+
     public void stop() {
         service.shutdown();
     }
-    
+
     public void makeImage() {
         if (isExec == false) {
             isExec = true;
             service.execute(this);
         }
     }
-    
+
     public boolean isExec() {
         return isExec;
     }
-    
+
     public void disposeImage() {
         if (offScreenImage != null) {
             offScreenImage.flush();
@@ -55,17 +56,19 @@ public class ImageWorker implements Runnable {
     public Image getImage() {
         return offScreenImage;
     }
-    
+
     public int getWidth() {
         return this.width;
     }
+
     public int getHeight() {
         return this.height;
     }
-    
+
     public int getImageWidth() {
         return getWidth();
     }
+
     public int getImageHeight() {
         return getHeight();
     }
@@ -74,12 +77,12 @@ public class ImageWorker implements Runnable {
     public void run() {
         if (AbstractRenderPlugin.MainWindow.isVisible() == false) {
             if (offScreenImage != null) {
-                //イメージオブジェクトのメモリを解放
+                // イメージオブジェクトのメモリを解放
                 disposeImage();
             }
             return;
         }
-        
+
         if (offScreenImage == null) {
             // ノーツ画像
             offScreenImage = LayoutManager.getInstance().createBufferdImage(getImageWidth(), getImageHeight());
@@ -89,13 +92,13 @@ public class ImageWorker implements Runnable {
         Graphics2D g2d = offScreenImage.createGraphics();
         g2d.setColor(LayoutManager.getInstance().getBackColor());
         g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
-        //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
-        //g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
+        // g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.CLEAR));
+        // g2d.fillRect(0, 0, getImageWidth(), getImageHeight());
         g2d.dispose();
 
-        // オフスクリーン描画 
+        // オフスクリーン描画
         paintImage(offScreenGraphic);
-        
+
         isExec = false;
     }
 
@@ -106,13 +109,13 @@ public class ImageWorker implements Runnable {
     public void setLeftMeasTh(int leftMeasTh) {
         this.leftMeasTh = leftMeasTh;
     }
-    
+
     protected void paintImage(Graphics g) {
         /* 継承先で処理を記述 */
     }
-    
+
     public void reset() {
-    	/* 継承先で処理を記述 */
+        /* 継承先で処理を記述 */
     }
-    
+
 }
