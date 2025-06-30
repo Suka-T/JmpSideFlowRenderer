@@ -92,7 +92,7 @@ public class LayoutManager {
         }
 
         for (Color nc : notesColor) {
-            notesBorderColor.add(Utility.convertHighLightColor(nc, -128));
+            notesBorderColor.add(Utility.convertHighLightColor(nc, -90));
         }
 
         cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);

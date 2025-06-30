@@ -406,6 +406,41 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         Dimension dim = this.getContentPane().getSize();
         g.drawImage(orgScreenImage, 0, 0, (int) dim.getWidth(), (int) dim.getHeight(), 0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), null);
     }
+    
+    private double angle = 0;
+    
+    private void drawSpinner(Graphics2D g2d) {
+        int w = getContentPane().getWidth();
+        int h = getContentPane().getHeight();
+        int spinnerRadius = 120; // スピナーのサイズ半径
+        
+        angle += 0.1;
+        
+        Color armColor = LayoutManager.getInstance().getCursorColor();
+
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g2d.translate(w / 2, h / 2);
+        g2d.rotate(angle);
+        
+        float fr = (float)armColor.getRed() / 255.0f;
+        float fg = (float)armColor.getGreen() / 255.0f;
+        float fb = (float)armColor.getBlue() / 255.0f;
+
+        // 回転アームを描画（12本）
+        for (int i = 0; i < 12; i++) {
+            float alpha = (i + 1) / 12f;
+            g2d.setColor(new Color(fr, fg, fb, alpha));
+            int armWidth = 32;
+            int armHeight = 10;
+            g2d.fillRoundRect(spinnerRadius, -armHeight / 2, armWidth, armHeight, 10, 10);
+            g2d.rotate(Math.PI / 6);
+        }
+
+        // 描画座標を元に戻す
+        g2d.rotate(-angle);
+        g2d.translate(-w / 2, -h / 2);
+    }
 
     public void paintDisplay(Graphics g) {
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
@@ -434,8 +469,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         copyFromNotesImage(g);
 
         if (JMPCoreAccessor.getSystemManager().getStatus(ISystemManager.SYSTEM_STATUS_ID_FILE_LOADING) == true && isFirstRendering == false) {
-            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
-            g.setColor(Color.WHITE);
+            int fsize = 28;
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fsize));
+            g.setColor(LayoutManager.getInstance().getCursorColor());
             FontMetrics fm = g.getFontMetrics();
             int stringWidth = 0;
             int stringHeight = 0;
@@ -444,7 +480,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             sb.append("＼＿ヘ(Д｀*)");
             stringWidth = fm.stringWidth(sb.toString());
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
+            int strX = (paneWidth - stringWidth) / 2;
+            int strY = (paneHeight - stringHeight) / 2 + 20;
+            g.drawString(sb.toString(), strX, strY - (fsize / 2));
             sb.setLength(0);
             sb.append("Now loading");
             stringWidth = fm.stringWidth(sb.toString());
@@ -457,7 +495,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             }
             cnt++;
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
+            strX = (paneWidth - stringWidth) / 2;
+            g.drawString(sb.toString(), strX, strY + (fsize / 2));
+            drawSpinner((Graphics2D)g);
         }
         else if (midiUnit.isValidSequence() == false && isFirstRendering == false) {
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
@@ -467,28 +507,36 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             sb.append(getTopString());
             int stringWidth = fm.stringWidth(sb.toString());
             int stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
+            int strX = (paneWidth - stringWidth) / 2;
+            int strY = (paneHeight - stringHeight) / 2;
+            g.drawString(sb.toString(), strX, strY - 20);
             sb.setLength(0);
             sb.append("Drag and Drop your MIDI or MIDI and AUDIO files here.");
             stringWidth = fm.stringWidth(sb.toString());
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
+            strX = (paneWidth - stringWidth) / 2;
+            g.drawString(sb.toString(), strX, strY + 20);
         }
         else if (imageWorkerMgr.getNotesImage() == null || isFirstRendering == true) {
             // 描画が追いついていない
-            g.setColor(Color.WHITE);
-            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
+            int fsize = 28;
+            g.setColor(LayoutManager.getInstance().getCursorColor());
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fsize));
             FontMetrics fm = g.getFontMetrics();
             sb.setLength(0);
             sb.append("...φ(｡_｡*)");
             int stringWidth = fm.stringWidth(sb.toString());
             int stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 - 20);
+            int strX = (paneWidth - stringWidth) / 2;
+            int strY = (paneHeight - stringHeight) / 2 + 20;
+            g.drawString(sb.toString(), strX, strY - (fsize / 2));
             sb.setLength(0);
             sb.append("Rendering now");
             stringWidth = fm.stringWidth(sb.toString());
             stringHeight = fm.getHeight();
-            g.drawString(sb.toString(), (paneWidth - stringWidth) / 2, (paneHeight - stringHeight) / 2 + 20);
+            strX = (paneWidth - stringWidth) / 2;
+            g.drawString(sb.toString(), strX, strY + (fsize / 2));
+            drawSpinner((Graphics2D)g);
         }
         else {
         }
