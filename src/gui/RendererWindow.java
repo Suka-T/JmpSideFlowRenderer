@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -375,6 +376,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                 }
                 Thread.sleep(10);
             }
+
+            //
+            Thread.sleep(2000);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -406,26 +410,26 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         Dimension dim = this.getContentPane().getSize();
         g.drawImage(orgScreenImage, 0, 0, (int) dim.getWidth(), (int) dim.getHeight(), 0, 0, orgScreenImage.getWidth(), orgScreenImage.getHeight(), null);
     }
-    
+
     private double angle = 0;
-    
+
     private void drawSpinner(Graphics2D g2d) {
         int w = getContentPane().getWidth();
         int h = getContentPane().getHeight();
         int spinnerRadius = 120; // スピナーのサイズ半径
-        
+
         angle += 0.1;
-        
+
         Color armColor = LayoutManager.getInstance().getCursorColor();
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         g2d.translate(w / 2, h / 2);
         g2d.rotate(angle);
-        
-        float fr = (float)armColor.getRed() / 255.0f;
-        float fg = (float)armColor.getGreen() / 255.0f;
-        float fb = (float)armColor.getBlue() / 255.0f;
+
+        float fr = (float) armColor.getRed() / 255.0f;
+        float fg = (float) armColor.getGreen() / 255.0f;
+        float fb = (float) armColor.getBlue() / 255.0f;
 
         // 回転アームを描画（12本）
         for (int i = 0; i < 12; i++) {
@@ -441,6 +445,49 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         g2d.rotate(-angle);
         g2d.translate(-w / 2, -h / 2);
     }
+
+    private void drawGlowingLine(Graphics2D g2d, int x1, int y1, int x2, int y2, Color baseColor) {
+        // ======= 調整用パラメータ =======
+        float coreStroke = 5.0f;
+        float glowMaxStroke = 36.0f;
+        float glowMinStroke = 9.0f;
+        float glowStep = 3.0f;
+
+        // ======= カラー分解（ベースカラー → RGB） =======
+        int r = baseColor.getRed();
+        int g = baseColor.getGreen();
+        int b = baseColor.getBlue();
+
+        // ======= グロー層（外側から内側へ） =======
+        for (float stroke = glowMaxStroke; stroke >= glowMinStroke; stroke -= glowStep) {
+            g2d.setStroke(new BasicStroke(stroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2d.setColor(new Color(r, g, b, 20));  // 外周：淡く光らせる
+            g2d.drawLine(x1, y1, x2, y2);
+        }
+
+        // ======= 中間グロー層（やや濃い） =======
+        g2d.setStroke(new BasicStroke(glowMinStroke - 1));
+        g2d.setColor(new Color(
+            Math.min(255, r + 40),
+            Math.min(255, g + 40),
+            Math.min(255, b + 40),
+            100
+        ));
+        g2d.drawLine(x1, y1, x2, y2);
+
+        // ======= 中心線（コア線） =======
+        g2d.setStroke(new BasicStroke(coreStroke));
+        g2d.setColor(new Color(
+            Math.min(255, r + 80),
+            Math.min(255, g + 80),
+            Math.min(255, b + 80),
+            220
+        ));
+        g2d.drawLine(x1, y1, x2, y2);
+        
+        g2d.setStroke(new BasicStroke());
+    }
+
 
     public void paintDisplay(Graphics g) {
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
@@ -497,7 +544,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             stringHeight = fm.getHeight();
             strX = (paneWidth - stringWidth) / 2;
             g.drawString(sb.toString(), strX, strY + (fsize / 2));
-            drawSpinner((Graphics2D)g);
+            drawSpinner((Graphics2D) g);
         }
         else if (midiUnit.isValidSequence() == false && isFirstRendering == false) {
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
@@ -536,7 +583,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             stringHeight = fm.getHeight();
             strX = (paneWidth - stringWidth) / 2;
             g.drawString(sb.toString(), strX, strY + (fsize / 2));
-            drawSpinner((Graphics2D)g);
+            drawSpinner((Graphics2D) g);
         }
         else {
         }
@@ -843,10 +890,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
         /* Tickbar描画 */
         Color csrColor = LayoutManager.getInstance().getCursorColor();
-        g2d.setColor(csrColor);
-        g2d.drawLine(tickBarPosition - 1, 0, tickBarPosition - 1, getOrgHeight());
-        g2d.drawLine(tickBarPosition, 0, tickBarPosition, getOrgHeight());
-        g2d.drawLine(tickBarPosition + 1, 0, tickBarPosition + 1, getOrgHeight());
+        drawGlowingLine(g2d, tickBarPosition, 0, tickBarPosition, getOrgHeight(), csrColor);
 
         g2d.setColor(Color.BLACK);
         for (int i = 0; i < 15; i++) {
