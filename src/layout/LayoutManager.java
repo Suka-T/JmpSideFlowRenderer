@@ -14,10 +14,12 @@ import java.util.List;
 import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
+import layout.LayoutConfig.EColorAsign;
 import layout.parts.ArcNotesPainter;
 import layout.parts.FlatNotesPainter;
 import layout.parts.NormalNotesPainter;
 import layout.parts.NotesPainter;
+import plg.SystemProperties;
 
 public class LayoutManager {
     public static final int DEFAULT_TICK_MEAS = 1;
@@ -30,6 +32,8 @@ public class LayoutManager {
     private Color bgColor = null;
     private Color bdColor = null;
     private Color pbColor = null;
+
+    private Color bgColorReverse = null;
 
     private Canvas rootCanvas = null;
 
@@ -65,33 +69,35 @@ public class LayoutManager {
 
         if (layout.notesColorCodes.isEmpty() == true) {
             if (layout.notesColorCodes.isEmpty() == true) {
-                layout.notesColorCodes.add("#00FF00");
-                layout.notesColorCodes.add("#FFFF00");
-                layout.notesColorCodes.add("#00FFFF");
-                layout.notesColorCodes.add("#FF00FF");
-                layout.notesColorCodes.add("#FFA500");
-                layout.notesColorCodes.add("#87CEEB");
-                layout.notesColorCodes.add("#FF69B4");
-                layout.notesColorCodes.add("#FFF700");
-                // layout.notesColorCodes.add("#50FA7B");
-                layout.notesColorCodes.add("#ffe4e1");
-                layout.notesColorCodes.add("#FF0000");
+                layout.notesColorCodes.add("#87AACF");
+                layout.notesColorCodes.add("#A1E55C");
+                layout.notesColorCodes.add("#FCAF3E");
+                layout.notesColorCodes.add("#FCEB57");
+                layout.notesColorCodes.add("#CB91D0");
+                layout.notesColorCodes.add("#EE7878");
+                layout.notesColorCodes.add("#3366FF");
+                layout.notesColorCodes.add("#FF7E33");
+                layout.notesColorCodes.add("#33FF66");
+                layout.notesColorCodes.add("#FF3381");
+                layout.notesColorCodes.add("#33FFFF");
+                layout.notesColorCodes.add("#E433FF");
             }
         }
 
-        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.None) {
+        EColorAsign colAsign = (EColorAsign) layout.getData(LayoutConfig.LC_NOTES_COLOR_ASIGN);
+        if (colAsign == LayoutConfig.EColorAsign.Inherit || colAsign == LayoutConfig.EColorAsign.None) {
             for (int i = 0; i < 16; i++) {
                 String key = String.format("ch_color_%d", (i + 1));
                 notesColor.add(Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key)));
             }
         }
-        if (layout.colorAsign == LayoutConfig.EColorAsign.Inherit || layout.colorAsign == LayoutConfig.EColorAsign.Asign) {
+        if (colAsign == LayoutConfig.EColorAsign.Inherit || colAsign == LayoutConfig.EColorAsign.Asign) {
             for (String s : layout.notesColorCodes) {
                 notesColor.add(Utility.convertCodeToHtmlColor(s));
             }
         }
 
-        double borderOffset = layout.notesColorBorderRgb;
+        double borderOffset = (double) layout.getData(LayoutConfig.LC_NOTES_COLOR_BORDER_RGB);
         for (Color nc : notesColor) {
             int r = nc.getRed();
             int g = nc.getGreen();
@@ -103,26 +109,24 @@ public class LayoutManager {
             notesBorderColor.add(new Color(r > 255 ? 255 : r, g > 255 ? 255 : g, b > 255 ? 255 : b, a));
         }
 
-        cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
-        cursorEffeColor = Utility.convertCodeToHtmlColor(layout.cursorEffeColor);
+        cursorColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_CURSOR_COLOR));
+        cursorEffeColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_CURSOR_EFFE_COLOR));
 
-        bgColor = Utility.convertCodeToHtmlColor(layout.prBackColor);
-        bdColor = Utility.convertCodeToHtmlColor(layout.prBorderColor);
-        pbColor = Utility.convertCodeToHtmlColor(layout.pbBaseLineColor);
+        bgColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PLAYER_BGCOLOR));
+        bdColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PLAYER_BDCOLOR));
+        pbColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PB_COLOR));
+        bgColorReverse = ((bgColor.getRed() + bgColor.getGreen() + bgColor.getBlue()) / 3) >= 128 ? Color.BLACK : Color.WHITE;
 
-        if (layout.notessDesign == LayoutConfig.ENotesDesign.Normal) {
+        LayoutConfig.ENotesDesign notesDesign = (LayoutConfig.ENotesDesign) layout.getData(LayoutConfig.LC_NOTES_DESIGN);
+        if (notesDesign == LayoutConfig.ENotesDesign.Normal) {
             notesPainter = new NormalNotesPainter();
         }
-        else if (layout.notessDesign == LayoutConfig.ENotesDesign.Arc) {
+        else if (notesDesign == LayoutConfig.ENotesDesign.Arc) {
             notesPainter = new ArcNotesPainter();
         }
         else {
             notesPainter = new FlatNotesPainter();
         }
-    }
-
-    public void write(File f) throws IOException {
-        layout.write(f);
     }
 
     public void read(File f) throws IOException {
@@ -144,11 +148,11 @@ public class LayoutManager {
     }
 
     public LayoutConfig.ECursorType getCursorType() {
-        return layout.cursorType;
+        return (LayoutConfig.ECursorType) layout.getData(LayoutConfig.LC_CURSOR_TYPE);
     }
 
     public LayoutConfig.EColorRule getColorRule() {
-        return layout.colorRule;
+        return (LayoutConfig.EColorRule) layout.getData(LayoutConfig.LC_PLAYER_COLOR_RULE);
     }
 
     public Color getCursorColor() {
@@ -172,35 +176,43 @@ public class LayoutManager {
     }
 
     public boolean isVisibleInfoStr() {
-        return layout.isVisibleMonitorStr;
+        return (boolean) layout.getData(LayoutConfig.LC_INFO_VISIBLE);
     }
 
     public boolean isVisibleHorizonBorder() {
-        return layout.isVisibleHorizonBorder;
+        return (boolean) layout.getData(LayoutConfig.LC_PLAYER_BORDER_HORIZON_VISIBLE);
     }
 
     public boolean isVisibleVerticalBorder() {
-        return layout.isVisibleVerticalBorder;
+        return (boolean) layout.getData(LayoutConfig.LC_PLAYER_BORDER_VERTICAL_VISIBLE);
     }
 
     public boolean isVisiblePbLine() {
-        return layout.isVisiblePb;
+        return (boolean) layout.getData(LayoutConfig.LC_PB_VISIBLE);
     }
-    
+
     public boolean isVisibleCursorEffect() {
-        return layout.isVisibleCursorEffect;
+        return (boolean) layout.getData(LayoutConfig.LC_CURSOR_EFFE_VISIBLE);
     }
 
     public LayoutConfig.ENotesDesign getNotesDesign() {
-        return layout.notessDesign;
+        return (LayoutConfig.ENotesDesign) layout.getData(LayoutConfig.LC_NOTES_DESIGN);
     }
 
     public int getTickBarPosition() {
-        return layout.tickBarPosition;
+        int pos = (int) layout.getData(LayoutConfig.LC_CURSOR_POS);
+        if (pos == -1) {
+            pos = SystemProperties.getInstance().getKeyWidth();
+        }
+        return pos;
     }
 
     public NotesPainter getNotesPainter() {
         return notesPainter;
+    }
+
+    public Color getBgColorReverse() {
+        return bgColorReverse;
     }
 
 }

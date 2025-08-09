@@ -12,6 +12,7 @@ notes.color4=FCEB57
 notes.color5=CB91D0
 notes.color6=EE7878
 notes.design=arc
+notes.border.colorRGB=0.5
 pb.basecolor=969696
 pb.visible=false
 player.bdcolor=3C3C3C

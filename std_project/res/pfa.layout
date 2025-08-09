@@ -1,6 +1,7 @@
 description=PFA-like design
 cursor.color=A02020
 cursor.effect.color=ffffff
+cursor.effect.visible=true
 cursor.position=top
 cursor.type=keyboard
 info.visible=true
@@ -12,6 +13,7 @@ notes.color4=FF3381
 notes.color5=33FFFF
 notes.color6=E433FF
 notes.design=normal
+notes.border.colorRGB=0.5
 pb.basecolor=969696
 pb.visible=false
 player.bdcolor=262626

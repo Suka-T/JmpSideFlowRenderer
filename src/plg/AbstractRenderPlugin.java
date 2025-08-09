@@ -48,11 +48,10 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
             String layoutFilename = SystemProperties.getInstance().getLayoutFile();
             if (!layoutFilename.contains(".")) {
                 layoutFilename += ".layout";
+                folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_RES_DIR, this));
+                fullPath = folder.resolve(layoutFilename);
+                LayoutManager.getInstance().read(new File(fullPath.toString()));
             }
-
-            folder = Paths.get(JMPCoreAccessor.getSystemManager().getSystemPath(ISystemManager.PATH_RES_DIR, this));
-            fullPath = folder.resolve(layoutFilename);
-            LayoutManager.getInstance().read(new File(fullPath.toString()));
         }
         catch (IOException e1) {
             // e1.printStackTrace();

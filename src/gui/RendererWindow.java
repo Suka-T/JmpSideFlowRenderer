@@ -448,7 +448,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
     private void drawGlowingLine(Graphics2D g2d, int x1, int y1, int x2, int y2, Color baseColor) {
         // ======= 調整用パラメータ =======
         float coreStroke = 5.0f;
-        float glowMaxStroke = 36.0f;
+        float glowMaxStroke = 18.0f;
         float glowMinStroke = 9.0f;
         float glowStep = 3.0f;
 
@@ -486,7 +486,14 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         
         g2d.setStroke(new BasicStroke());
     }
-
+    
+    protected int getInfoStrX() {
+        return SystemProperties.getInstance().getKeyWidth() + 10;
+    }
+    
+    protected int getInfoStrY() {
+        return 20;
+    }
 
     public void paintDisplay(Graphics g) {
         INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
@@ -548,7 +555,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         else if (midiUnit.isValidSequence() == false && isFirstRendering == false) {
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 32));
             FontMetrics fm = g.getFontMetrics();
-            g.setColor(Color.WHITE);
+            g.setColor(LayoutManager.getInstance().getBgColorReverse());
             sb.setLength(0);
             sb.append(getTopString());
             int stringWidth = fm.stringWidth(sb.toString());
@@ -588,13 +595,11 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         }
 
         if (LayoutManager.getInstance().isVisibleInfoStr() == true) {
-            int sx = 10;
-            int sy = 20;
+            int sx = getInfoStrX();
+            int sy = getInfoStrY();
             int sh = 18;
-            Color bgColor = LayoutManager.getInstance().getBackColor();
-            int tc = (bgColor.getRed() + bgColor.getGreen() + bgColor.getBlue()) / 3;
-            Color backStrColor = tc >= 128 ? Color.WHITE : Color.BLACK;
-            Color topStrColor = tc < 128 ? Color.WHITE : Color.BLACK;
+            Color backStrColor = LayoutManager.getInstance().getBackColor();
+            Color topStrColor = LayoutManager.getInstance().getBgColorReverse();;
             g.setFont(infoFont);
 
             sb.setLength(0);
@@ -854,39 +859,42 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
         /* 衝突エフェクト描画 */
         if (tickBarPosition > 0 && validNotesImg == true) {
-            Color hitEffectColor = LayoutManager.getInstance().getCursorEffectColor();
-            g.setColor(LayoutManager.getInstance().getBackColor());
-            int keyHeight = getMeasCellHeight();
-            int inEffWidth = getEffectWidth(1);
-            int outEffWidth = getEffectWidth(-1);
-            int effx = 0;
-            g.setColor(hitEffectColor);
-            for (int i = 0; i < 128; i++) {
-                boolean isFocus = false;
-                rgb = getKeyColor(127 - i);
-                if (rgb != -1) {
-                    isFocus = true;
-                }
-                else {
-                    isFocus = false;
-                }
-
-                if (isFocus == true) {
-                    effx = effOrgX;
-                    for (int j = 0; j < 16; j++) {
-                        float alpha = (1.0f - ((float) j / 16.0f)) * 0.9f;
-                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                        g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i], inEffWidth, keyHeight);
-                        g2d.fillRect(effx - (outEffWidth * j) - outEffWidth, hitEffectPosY[i], outEffWidth, keyHeight);
+            boolean isVisibleCurEffe = LayoutManager.getInstance().isVisibleCursorEffect();
+            if (isVisibleCurEffe == true) {
+                Color hitEffectColor = LayoutManager.getInstance().getCursorEffectColor();
+                g.setColor(LayoutManager.getInstance().getBackColor());
+                int keyHeight = getMeasCellHeight();
+                int inEffWidth = getEffectWidth(1);
+                int outEffWidth = getEffectWidth(-1);
+                int effx = 0;
+                g.setColor(hitEffectColor);
+                for (int i = 0; i < 128; i++) {
+                    boolean isFocus = false;
+                    rgb = getKeyColor(127 - i);
+                    if (rgb != -1) {
+                        isFocus = true;
                     }
-                    /*
-                     * for (int j = 0; j < 10; j++) { float alpha = 1.0f - j *
-                     * 0.1f; g2d.setComposite(AlphaComposite.getInstance(
-                     * AlphaComposite.SRC_OVER, alpha)); g2d.fillRect(effx,
-                     * hitEffectPosY[i], effWidth, keyHeight); effx += effWidth;
-                     * }
-                     */
-                    g2d.setComposite(AlphaComposite.SrcOver);
+                    else {
+                        isFocus = false;
+                    }
+    
+                    if (isFocus == true) {
+                        effx = effOrgX;
+                        for (int j = 0; j < 16; j++) {
+                            float alpha = (1.0f - ((float) j / 16.0f)) * 0.9f;
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                            g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i], inEffWidth, keyHeight);
+                            g2d.fillRect(effx - (outEffWidth * j) - outEffWidth, hitEffectPosY[i], outEffWidth, keyHeight);
+                        }
+                        /*
+                         * for (int j = 0; j < 10; j++) { float alpha = 1.0f - j *
+                         * 0.1f; g2d.setComposite(AlphaComposite.getInstance(
+                         * AlphaComposite.SRC_OVER, alpha)); g2d.fillRect(effx,
+                         * hitEffectPosY[i], effWidth, keyHeight); effx += effWidth;
+                         * }
+                         */
+                        g2d.setComposite(AlphaComposite.SrcOver);
+                    }
                 }
             }
         }
@@ -900,7 +908,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             drawNoEffeLine(g2d, tickBarPosition, 0, tickBarPosition, getOrgHeight(), csrColor);
         }
 
-        g2d.setColor(Color.BLACK);
+        g2d.setColor(LayoutManager.getInstance().getBackColor());
         for (int i = 0; i < 15; i++) {
             float alpha = (1.0f - ((float) i / 15.0f)) * 0.9f;
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));

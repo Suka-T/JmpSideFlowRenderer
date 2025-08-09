@@ -4,17 +4,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
+import plg.PropertiesNode.PropertiesNodeType;
+
 public class SystemProperties {
-    public static final String SYSP_IMAGEWORKER_COUNT = "renderer.worker.count";
-    public static final String SYSP_DEBUGMODE = "renderer.debugmode";
-    public static final String SYSP_FPS = "renderer.fps";
-    public static final String SYSP_LAYER_ORDER = "renderer.layer.order";
-    public static final String SYSP_LAYOUT_FILE = "layout.file";
-    public static final String SYSP_KEYWIDTH = "renderer.key.width";
-    public static final String SYSP_NOTES_SPEED = "renderer.notes.speed";
-    public static final String SYSP_NOTES_IMAGE_CNT = "renderer.image.count";
+    public static final String SYSP_LAYOUT = "layout";
+    public static final String SYSP_DEBUGMODE = "debugMode";
+    public static final String SYSP_RENDERER_WORKNUM = "renderer.workerNum";
+    public static final String SYSP_RENDERER_FPS = "renderer.fps";
+    public static final String SYSP_RENDERER_LAYERORDER = "renderer.layerOrder";
+    public static final String SYSP_RENDERER_KEYWIDTH = "renderer.keyWidth";
+    public static final String SYSP_RENDERER_NOTESSPEED = "renderer.notesSpeed";
+    public static final String SYSP_RENDERER_NOTESIMAGENUM = "renderer.notesImageNum";
 
     public static int DEFAULT_KEY_WIDTH = 50;
 
@@ -34,181 +38,107 @@ public class SystemProperties {
         }
     }
 
-    private int workerNum = 3;
-    private int fixedFps = 60;
-    private String layoutFile = "";
-    private SyspLayerOrder layerOrder = SyspLayerOrder.DESC;
-    private int keyWidth = DEFAULT_KEY_WIDTH;
-    private int notesWidth = 420;
-    private boolean notesWidthAuto = false;
-    private int notesImageCount = 10;
+    private static Object[] layerOrderItemO = { SyspLayerOrder.ASC, SyspLayerOrder.DESC };
+    private static String[] layerOrderItemS = { SyspLayerOrder.ASC.toString(), SyspLayerOrder.DESC.toString() };
 
-    private boolean debugMode = false;
+    private static Object[] NotesSpeedItemO = { -1 };
+    private static String[] NotesSpeedItemS = { "auto" };
+
+    private static Object[] NotesCountItemO = { -1 };
+    private static String[] NotesCountItemS = { "auto" };
+
+    private List<PropertiesNode> nodes;
+    private boolean notesWidthAuto = true;
+    private int notesWidth = 420;
 
     private static SystemProperties instance = new SystemProperties();
 
     private SystemProperties() {
+        nodes = new ArrayList<>();
+
+        nodes.add(new PropertiesNode(SYSP_LAYOUT, PropertiesNodeType.STRING, ""));
+        nodes.add(new PropertiesNode(SYSP_DEBUGMODE, PropertiesNodeType.BOOLEAN, "false"));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_WORKNUM, PropertiesNodeType.INT, "3", "3", "20"));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_FPS, PropertiesNodeType.INT, "60", "20", ""));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_LAYERORDER, PropertiesNodeType.ITEM, SyspLayerOrder.DESC, layerOrderItemS, layerOrderItemO));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_KEYWIDTH, PropertiesNodeType.INT, "420", "", ""));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_NOTESSPEED, PropertiesNodeType.INT, "-1", "1", "100", NotesSpeedItemS, NotesSpeedItemO));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_NOTESIMAGENUM, PropertiesNodeType.INT, "60", "3", "100", NotesCountItemS, NotesCountItemO));
     }
 
     public static SystemProperties getInstance() {
         return instance;
     }
 
+    private PropertiesNode getPropNode(String key) {
+        for (PropertiesNode nd : nodes) {
+            if (nd.getKey().equalsIgnoreCase(key)) {
+                return nd;
+            }
+        }
+        return null;
+    }
+
+    private void setPropObject(Properties props, String key) {
+        String str = props.getProperty(key);
+        PropertiesNode node = getPropNode(key);
+        node.setObject(str);
+    }
+    
+    public Object getData(String key) {
+        PropertiesNode node = getPropNode(key);
+        if (node == null) {
+            return null;
+        }
+        return node.getData();
+    }
+
     public void read(File file) throws FileNotFoundException, IOException {
         Properties props = new Properties();
         props.load(new FileInputStream(file));
-
-        String str = null;
-        str = props.getProperty(SYSP_IMAGEWORKER_COUNT);
-        if (str != null) {
-            try {
-                workerNum = Integer.parseInt(str);
-            }
-            catch (Exception e) {
-                workerNum = 10;
-            }
-
-            if (workerNum < 3) {
-                workerNum = 3;
-            }
-            else if (20 < workerNum) {
-                workerNum = 20;
-            }
+        for (PropertiesNode nd : nodes) {
+            setPropObject(props, nd.getKey());
         }
-
-        str = props.getProperty(SYSP_DEBUGMODE);
-        if (str != null) {
-            try {
-                debugMode = Boolean.parseBoolean(str);
-            }
-            catch (Exception e) {
-                debugMode = false;
-            }
-        }
-
-        str = props.getProperty(SYSP_FPS);
-        if (str != null) {
-            try {
-                fixedFps = Integer.parseInt(str);
-            }
-            catch (Exception e) {
-                fixedFps = 60;
-            }
-
-            // 最小20まで
-            if (fixedFps < 20) {
-                fixedFps = 20;
-            }
-        }
-
-        str = props.getProperty(SYSP_LAYOUT_FILE);
-        if (str != null) {
-            try {
-                layoutFile = str;
-            }
-            catch (Exception e) {
-                layoutFile = "";
-            }
-        }
-
-        str = props.getProperty(SYSP_LAYER_ORDER);
-        if (str != null) {
-            if (str.equals(SyspLayerOrder.ASC.toString())) {
-                layerOrder = SyspLayerOrder.ASC;
-            }
-            else {
-                layerOrder = SyspLayerOrder.DESC;
-            }
-        }
-
+        
+        // 以下、ネイティブ変数に分ける 
+        int notesSpeed = (int) getData(SYSP_RENDERER_NOTESSPEED);
         boolean notesSpeedIsAuto = true;
-        double notesSpeed = 50.0;
-        str = props.getProperty(SYSP_NOTES_SPEED);
-        if (str == null) {
-        }
-        else if (str.equalsIgnoreCase("auto") == true) {
+        if (notesSpeed == -1) {
             notesSpeedIsAuto = true;
+            notesSpeed = 50;
         }
-        else {
-            try {
-                notesSpeedIsAuto = false;
-                notesSpeed = Double.parseDouble(str);
-                if (notesSpeed < 1.0) {
-                    notesSpeed = 1.0;
-                }
-                else if (notesSpeed > 100.0) {
-                    notesSpeed = 100.0;
-                }
-            }
-            catch (Exception e) {
-                notesSpeedIsAuto = true;
-                notesSpeed = 50.0;
-            }
-        }
-
         notesWidthAuto = notesSpeedIsAuto;
-        notesWidth = 160 + (int) ((double) (1200 - 160) * (notesSpeed / 100.0));
+        notesWidth = 160 + (int) ((double) (1200 - 160) * ((double) notesSpeed / 100.0));
         if (notesWidth < 160) {
             notesWidth = 160;
         }
         else if (1200 < notesWidth) {
             notesWidth = 1200;
         }
-
-        keyWidth = DEFAULT_KEY_WIDTH;
-
-        str = props.getProperty(SYSP_KEYWIDTH);
-        if (str != null) {
-            try {
-                setKeyWidth(Integer.parseInt(str));
-            }
-            catch (Exception e) {
-                setKeyWidth(DEFAULT_KEY_WIDTH);
-            }
-        }
-
-        str = props.getProperty(SYSP_NOTES_IMAGE_CNT);
-        if (str != null) {
-            try {
-                notesImageCount = Integer.parseInt(str);
-                if (notesImageCount < 3) {
-                    notesImageCount = 3;
-                }
-                else if (notesImageCount > 60) {
-                    notesImageCount = 60;
-                }
-            }
-            catch (Exception e) {
-            }
-        }
     }
 
     public int getWorkerNum() {
-        return workerNum;
+        return (int) getPropNode(SYSP_RENDERER_WORKNUM).getData();
     }
 
     public String getLayoutFile() {
-        return layoutFile;
+        return (String) getPropNode(SYSP_LAYOUT).getData();
     }
 
     public boolean isDebugMode() {
-        return debugMode;
+        return (boolean) getPropNode(SYSP_DEBUGMODE).getData();
     }
 
     public int getFixedFps() {
-        return fixedFps;
+        return (int) getPropNode(SYSP_RENDERER_FPS).getData();
     }
 
     public SyspLayerOrder getLayerOrder() {
-        return layerOrder;
+        return (SyspLayerOrder) getPropNode(SYSP_RENDERER_LAYERORDER).getData();
     }
 
     public int getKeyWidth() {
-        return keyWidth;
-    }
-
-    public void setKeyWidth(int keyWidth) {
-        this.keyWidth = keyWidth;
+        return SystemProperties.DEFAULT_KEY_WIDTH;
     }
 
     public int getNotesWidth() {
@@ -220,6 +150,6 @@ public class SystemProperties {
     }
 
     public int getNotesImageCount() {
-        return notesImageCount;
+        return (int) getPropNode(SYSP_RENDERER_NOTESIMAGENUM).getData();
     }
 }
