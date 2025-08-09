@@ -1,4 +1,6 @@
-package plg;
+
+
+import plg.AbstractRenderPlugin;
 
 public class JmpSideFlowRenderer extends AbstractRenderPlugin {
 

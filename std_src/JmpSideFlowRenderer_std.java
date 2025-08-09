@@ -1,4 +1,3 @@
-import plg.JmpSideFlowRenderer;
 import std.StandAlonePluginInvoker;
 
 public class JmpSideFlowRenderer_std {

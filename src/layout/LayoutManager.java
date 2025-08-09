@@ -91,8 +91,16 @@ public class LayoutManager {
             }
         }
 
+        double borderOffset = layout.notesColorBorderRgb;
         for (Color nc : notesColor) {
-            notesBorderColor.add(Utility.convertHighLightColor(nc, -90));
+            int r = nc.getRed();
+            int g = nc.getGreen();
+            int b = nc.getBlue();
+            int a = nc.getAlpha();
+            r = (int) ((double) r * borderOffset);
+            g = (int) ((double) g * borderOffset);
+            b = (int) ((double) b * borderOffset);
+            notesBorderColor.add(new Color(r > 255 ? 255 : r, g > 255 ? 255 : g, b > 255 ? 255 : b, a));
         }
 
         cursorColor = Utility.convertCodeToHtmlColor(layout.cursorMainColor);
@@ -177,6 +185,10 @@ public class LayoutManager {
 
     public boolean isVisiblePbLine() {
         return layout.isVisiblePb;
+    }
+    
+    public boolean isVisibleCursorEffect() {
+        return layout.isVisibleCursorEffect;
     }
 
     public LayoutConfig.ENotesDesign getNotesDesign() {

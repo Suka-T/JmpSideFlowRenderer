@@ -34,7 +34,6 @@ import javax.swing.TransferHandler;
 
 import function.Utility;
 import image.ImagerWorkerManager;
-import jlib.core.ISoundManager;
 import jlib.core.ISystemManager;
 import jlib.core.IWindowManager;
 import jlib.core.JMPCoreAccessor;
@@ -42,8 +41,9 @@ import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import layout.LayoutConfig;
 import layout.LayoutManager;
-import plg.JmpSideFlowRenderer;
+import plg.AbstractRenderPlugin;
 import plg.SystemProperties;
+import plg.SystemProperties.SyspLayerOrder;
 
 public class RendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
 
@@ -270,6 +270,8 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             renderThread.start();
 
             imageWorkerMgr.start();
+            
+            adjustTickBar();
         }
         else {
             running = false;
@@ -344,11 +346,16 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
     }
 
     public void loadFile() {
+        IMidiUnit midiUnit = JMPCoreAccessor.getSoundManager().getMidiUnit();
+        if (midiUnit.isValidSequence() == false || running == false || isVisible() == false) {
+            return;
+        }
+        
         isFirstRendering = true;
+        
+//        long pastTime = System.currentTimeMillis();
 
         if (SystemProperties.getInstance().isNotesWidthAuto() == true) {
-            ISoundManager sm = JMPCoreAccessor.getSoundManager();
-            IMidiUnit midiUnit = sm.getMidiUnit();
             double fbpm = midiUnit.getFirstTempoInBPM();
             int newCellWidth = (int) (480.0 * (120.0 / fbpm));
             if (newCellWidth < 160) {
@@ -361,13 +368,16 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         }
 
         setLeftMeas(0);
-        calcDispMeasCount();
         resetPage();
 
         int numOfWorker = imageWorkerMgr.getNumOfWorker();
         int finished = 0;
         try {
             while (numOfWorker > finished) {
+                if (midiUnit.isValidSequence() == false || running == false || isVisible() == false) {
+                    break;
+                }
+                
                 finished = 0;
                 for (int i = 0; i < numOfWorker; i++) {
                     if (imageWorkerMgr.getWorker(i).isExec() == false) {
@@ -376,9 +386,16 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                 }
                 Thread.sleep(10);
             }
-
-            //
-            Thread.sleep(2000);
+            
+//            long eTime = System.currentTimeMillis() - pastTime;
+//            long sleepTime = 1000 - eTime;
+//            if (sleepTime < 1) {
+//                sleepTime = 1;
+//            }
+//
+//            if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
+//                Thread.sleep(sleepTime);
+//            }
         }
         catch (InterruptedException e) {
             e.printStackTrace();
@@ -394,7 +411,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             return;
         }
 
-        resetPage();
+        if (isVisible() == true) {
+            resetPage();
+        }
     }
 
     private StringBuilder sb = new StringBuilder(64); // 初期容量を指定
@@ -444,6 +463,18 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         // 描画座標を元に戻す
         g2d.rotate(-angle);
         g2d.translate(-w / 2, -h / 2);
+    }
+    
+    private void drawNoEffeLine(Graphics2D g2d, int x1, int y1, int x2, int y2, Color baseColor) {
+        // ======= 調整用パラメータ =======
+        float coreStroke = 5.0f;
+
+        // ======= 中心線（コア線） =======
+        g2d.setStroke(new BasicStroke(coreStroke));
+        g2d.setColor(baseColor);
+        g2d.drawLine(x1, y1, x2, y2);
+        
+        g2d.setStroke(new BasicStroke());
     }
 
     private void drawGlowingLine(Graphics2D g2d, int x1, int y1, int x2, int y2, Color baseColor) {
@@ -777,7 +808,11 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         }
         else {
             INotesMonitor notesMonitor = JMPCoreAccessor.getSoundManager().getNotesMonitor();
-            int track = notesMonitor.getTopNoteOnTrack(midiNo);
+            boolean isAsc = false;
+            if (SystemProperties.getInstance().getLayerOrder() == SyspLayerOrder.ASC) {
+                isAsc = true;
+            }
+            int track = notesMonitor.getTopNoteOnTrack(midiNo, isAsc);
             if (track != -1) {
                 Color color = LayoutManager.getInstance().getNotesColor(track);
                 return color.getRGB();
@@ -890,7 +925,12 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
         /* Tickbar描画 */
         Color csrColor = LayoutManager.getInstance().getCursorColor();
-        drawGlowingLine(g2d, tickBarPosition, 0, tickBarPosition, getOrgHeight(), csrColor);
+        if (LayoutManager.getInstance().isVisibleCursorEffect() == true) {
+            drawGlowingLine(g2d, tickBarPosition, 0, tickBarPosition, getOrgHeight(), csrColor);
+        }
+        else {
+            drawNoEffeLine(g2d, tickBarPosition, 0, tickBarPosition, getOrgHeight(), csrColor);
+        }
 
         g2d.setColor(Color.BLACK);
         for (int i = 0; i < 15; i++) {
@@ -964,7 +1004,9 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                 JMPCoreAccessor.getSoundManager().stop();
             }
             else {
-                JMPCoreAccessor.getSoundManager().initPosition();
+                if (JMPCoreAccessor.getSoundManager().getMidiUnit().isRenderingOnlyMode() == true) {
+                    JMPCoreAccessor.getSoundManager().initPosition();
+                }
                 JMPCoreAccessor.getSoundManager().play();
             }
         }
@@ -1106,7 +1148,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
             }
             else {
                 String path = files.get(0).getPath();
-                if (Utility.checkExtensions(path, JmpSideFlowRenderer.Extensions.split(",")) == true) {
+                if (Utility.checkExtensions(path, AbstractRenderPlugin.Extensions.split(",")) == true) {
                     JMPCoreAccessor.getFileManager().loadFileToPlay(path);
                 }
             }

@@ -155,7 +155,7 @@ public class NotesImageWorker extends ImageWorker {
         offsetCoordX = LayoutManager.getInstance().getTickBarPosition();
         int offsetCoordXtoMeas = offsetCoordX / mainWindow.getMeasCellWidth();
         int offsetCoordXtoTick = offsetCoordXtoMeas * midiUnit.getResolution();
-        int totalMeasCount = (int) ((double) mainWindow.getDispMeasCount() * 2.0);
+        int totalMeasCount = (int) ((double) mainWindow.getDispMeasCount() * 1.0);
 
         long absLeftMeas = -(leftMeas);
         long vpLenTick = (totalMeasCount * midiUnit.getResolution());
@@ -209,7 +209,6 @@ public class NotesImageWorker extends ImageWorker {
             g2d.setStroke(normalStroke);
 
             try {
-
                 midiUnit.parseMappedByteBuffer((short) trkIndex, new MappedParseFunc(mpStartTick, mpEndTick) {
 
                     @Override
@@ -239,6 +238,11 @@ public class NotesImageWorker extends ImageWorker {
                     @Override
                     public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
                     }
+                    
+                    @Override
+                    public boolean interrupt() {
+                        return isExec() == false;
+                    }
                 });
             }
             catch (Exception e) {
@@ -267,7 +271,7 @@ public class NotesImageWorker extends ImageWorker {
 
         // if ((startEvent != -1) && ((endEvent <= startEvent) || (vpStartTick >
         // endEvent))) {
-        if ((startEvent == -1) || ((endEvent <= startEvent) || (vpStartTick > endEvent))) {
+        if ((startEvent == -1) || ((endEvent <= startEvent) || (vpStartTick > endEvent)) || (AbstractRenderPlugin.MainWindow.isVisible() == false)) {
             // 無効データは何もしない
         }
         else {

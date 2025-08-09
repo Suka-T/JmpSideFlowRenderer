@@ -33,6 +33,8 @@ public class ImageWorker implements Runnable {
 
     public void stop() {
         service.shutdown();
+        
+        isExec = false;
     }
 
     public void makeImage() {

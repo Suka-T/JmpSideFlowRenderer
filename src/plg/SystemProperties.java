@@ -174,8 +174,8 @@ public class SystemProperties {
                 if (notesImageCount < 3) {
                     notesImageCount = 3;
                 }
-                else if (notesImageCount > 30) {
-                    notesImageCount = 30;
+                else if (notesImageCount > 60) {
+                    notesImageCount = 60;
                 }
             }
             catch (Exception e) {

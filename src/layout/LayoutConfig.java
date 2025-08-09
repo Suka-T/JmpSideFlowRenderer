@@ -21,12 +21,14 @@ public class LayoutConfig {
     public static final String LC_CURSOR_TYPE = "cursor.type";
     public static final String LC_CURSOR_COLOR = "cursor.color";
     public static final String LC_CURSOR_EFFE_COLOR = "cursor.effect.color";
+    public static final String LC_CURSOR_EFFE_VISIBLE = "cursor.effect.visible";
     public static final String LC_CURSOR_POS = "cursor.position";
     public static final String LC_PB_COLOR = "pb.basecolor";
     public static final String LC_PB_VISIBLE = "pb.visible";
     public static final String LC_NOTES_DESIGN = "notes.design";
     public static final String LC_NOTES_COLOR_ASIGN = "notes.colasign";
     public static final String LC_NOTES_COLOR = "notes.color";
+    public static final String LC_NOTES_COLOR_BORDER_RGB = "notes.border.colorRGB";
     public static final String LC_INFO_VISIBLE = "info.visible";
 
     public static enum ENotesDesign {
@@ -108,11 +110,13 @@ public class LayoutConfig {
     public boolean isVisibleVerticalBorder = true;
     public boolean isVisibleHorizonBorder = true;
     public boolean isVisibleMonitorStr = true;
+    public boolean isVisibleCursorEffect = true;
     public ENotesDesign notessDesign = ENotesDesign.Normal;
     public ECursorType cursorType = ECursorType.Keyboard;
     public EColorRule colorRule = EColorRule.Track;
     public EColorAsign colorAsign = EColorAsign.Asign;
     public List<String> notesColorCodes;
+    public double notesColorBorderRgb = 1.5;
 
     public LayoutConfig() {
         notesColorCodes = new ArrayList<String>();
@@ -179,6 +183,9 @@ public class LayoutConfig {
         str = props.getProperty(LC_INFO_VISIBLE);
         if (str != null)
             isVisibleMonitorStr = Boolean.parseBoolean(str);
+        str = props.getProperty(LC_CURSOR_EFFE_VISIBLE);
+        if (str != null)
+            isVisibleCursorEffect = Boolean.parseBoolean(str);
 
         str = props.getProperty(LC_NOTES_DESIGN);
         if (str == null) {
@@ -192,6 +199,7 @@ public class LayoutConfig {
         else if (str.equalsIgnoreCase(ENotesDesign.Arc.toString())) {
             notessDesign = ENotesDesign.Arc;
         }
+        
         str = props.getProperty(LC_NOTES_COLOR_ASIGN);
         if (str == null) {
         }
@@ -203,6 +211,17 @@ public class LayoutConfig {
         }
         else if (str.equalsIgnoreCase(EColorAsign.None.toString())) {
             colorAsign = EColorAsign.None;
+        }
+        
+        str = props.getProperty(LC_NOTES_COLOR_BORDER_RGB);
+        if (str == null) {
+        }
+        else {
+            try {
+                notesColorBorderRgb = Double.parseDouble(str);
+            }
+            catch (Exception e) {
+            }
         }
 
         notesColorCodes.clear();
