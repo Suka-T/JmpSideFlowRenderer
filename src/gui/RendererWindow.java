@@ -370,39 +370,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         setLeftMeas(0);
         resetPage();
 
-        int numOfWorker = imageWorkerMgr.getNumOfWorker();
-        int finished = 0;
-        try {
-            while (numOfWorker > finished) {
-                if (midiUnit.isValidSequence() == false || running == false || isVisible() == false) {
-                    break;
-                }
-                
-                finished = 0;
-                for (int i = 0; i < numOfWorker; i++) {
-                    if (imageWorkerMgr.getWorker(i).isExec() == false) {
-                        finished++;
-                    }
-                }
-                Thread.sleep(10);
-            }
-            
-//            long eTime = System.currentTimeMillis() - pastTime;
-//            long sleepTime = 1000 - eTime;
-//            if (sleepTime < 1) {
-//                sleepTime = 1;
-//            }
-//
-//            if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
-//                Thread.sleep(sleepTime);
-//            }
-        }
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        finally {
-            isFirstRendering = false;
-        }
+        isFirstRendering = false;
     }
 
     public void adjustTickBar() {
@@ -948,7 +916,12 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
         int startMeas = (int) midiUnit.getTickPosition() / midiUnit.getResolution();
         setLeftMeas(-startMeas);
 
-        imageWorkerMgr.reset(getLeftMeas(), dispMeasCount, NEXT_FLIP_COUNT);
+        if (isFirstRendering) {
+            imageWorkerMgr.firstRender(getLeftMeas(), dispMeasCount, NEXT_FLIP_COUNT);
+        }
+        else {
+            imageWorkerMgr.reset(getLeftMeas(), dispMeasCount, NEXT_FLIP_COUNT);
+        }
     }
 
     private void flipPage() {

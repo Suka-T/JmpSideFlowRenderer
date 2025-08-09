@@ -43,12 +43,42 @@ public class ImagerWorkerManager {
         }
         return null;
     }
+    
+    public void firstRender(int leftMeas, int dispMeas, int flipCount) {
+        int i = 0;
+        int offsetLeftMeas = Math.abs(leftMeas);
+        int flipMergin = -(flipCount);
+        int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+        workers[i].reset();
+        workers[i].setLeftMeasTh(-(flipLine));
+        workers[i].disposeImage();
+        workers[i].makeImage();
+        try {
+            // 最初のワーカーのレンダリングが終わるまで待つ 
+            while (workers[i].isExec()) {
+                Thread.sleep(50);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        if (workers.length >= 2) {
+            for (i = 1; i < workers.length; i++) {
+                flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+                workers[i].reset();
+                workers[i].setLeftMeasTh(-(flipLine));
+                workers[i].disposeImage();
+                workers[i].makeImage();
+            }
+        }
+        currentWorkerIndex = 0;
+    }
 
     public void reset(int leftMeas, int dispMeas, int flipCount) {
+        int offsetLeftMeas = Math.abs(leftMeas);
+        int flipMergin = -(flipCount);
         for (int i = 0; i < workers.length; i++) {
-            int offsetLeftMeas = leftMeas;
-            offsetLeftMeas = (offsetLeftMeas < 0) ? -(offsetLeftMeas) : offsetLeftMeas;
-            int flipMergin = -(flipCount);
             int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
             workers[i].reset();
             workers[i].setLeftMeasTh(-(flipLine));
@@ -63,7 +93,7 @@ public class ImagerWorkerManager {
         // int[] nextCache = workers[currentWorkerIndex].getTrackCache();
 
         currentWorkerIndex = (currentWorkerIndex + 1 >= workers.length) ? 0 : currentWorkerIndex + 1;
-        int offsetLeftMeas = (newLeftMeas < 0) ? -(newLeftMeas) : newLeftMeas;
+        int offsetLeftMeas = Math.abs(newLeftMeas);
         int flipMergin = -(flipCount);
         int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * (workers.length - 1));
         nextNotesThread.setLeftMeasTh(-(flipLine));
