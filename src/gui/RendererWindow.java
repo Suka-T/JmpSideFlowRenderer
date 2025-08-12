@@ -670,6 +670,10 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                 val1 = (long) notesMonitor.getNps();
                 sb.append("NPS: ");
                 formatWithCommas(val1, sb);
+                sb.append(" (");
+                val1 = (long) notesMonitor.getMaxNps();
+                formatWithCommas(val1, sb);
+                sb.append(")");
                 g.setColor(backStrColor);
                 g.drawString(sb.toString(), sx + 1, sy + 1);
                 g.setColor(topStrColor);
@@ -883,7 +887,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
                         for (int j = 0; j < 16; j++) {
                             float alpha = (1.0f - ((float) j / 16.0f)) * 0.9f;
                             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                            g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i], inEffWidth, keyHeight);
+                            g2d.fillRect(effx + (inEffWidth * j), hitEffectPosY[i] - 1, inEffWidth, keyHeight + 2);
                             g2d.fillRect(effx - (outEffWidth * j) - outEffWidth, hitEffectPosY[i], outEffWidth, keyHeight);
                         }
                         /*
