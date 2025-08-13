@@ -26,7 +26,9 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     }
 
     protected void createMainWindow() {
-        MainWindow = new JsfrRendererWindow();
+        MainWindow = new JsfrRendererWindow(
+                SystemProperties.getInstance().getWindowWidth(), 
+                SystemProperties.getInstance().getWindowHeight());
         MainWindow.init();
     }
 

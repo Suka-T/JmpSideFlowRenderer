@@ -47,9 +47,6 @@ import plg.SystemProperties.SyspLayerOrder;
 
 public class RendererWindow extends JFrame implements MouseListener, MouseMotionListener, MouseWheelListener, Runnable {
 
-    public static final int DEFAULT_WINDOW_WIDTH = 1280;
-    public static final int DEFAULT_WINDOW_HEIGHT = 768;
-
     private long delayNano = 0;
 
     // 次のページにフリップするpx数
@@ -92,20 +89,20 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
     protected boolean isFirstRendering = false;
 
     public int getOrgWidth() {
-        return DEFAULT_WINDOW_WIDTH;
+        return SystemProperties.getInstance().getDimWidth();
     }
 
     public int getOrgHeight() {
-        return DEFAULT_WINDOW_HEIGHT;
+        return SystemProperties.getInstance().getDimHeight();
     }
 
     /**
      * Create the frame.
      */
-    public RendererWindow() {
+    public RendererWindow(int winW, int winH) {
         this.setTransferHandler(new DropFileHandler());
         setLocation(10, 10);
-        getContentPane().setPreferredSize(new Dimension(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT));
+        getContentPane().setPreferredSize(new Dimension(winW, winH));
         pack();
 
         setLayout(new BorderLayout(0, 0));
@@ -357,12 +354,12 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
         if (SystemProperties.getInstance().isNotesWidthAuto() == true) {
             double fbpm = midiUnit.getFirstTempoInBPM();
-            int newCellWidth = (int) (480.0 * (120.0 / fbpm));
+            int newCellWidth = (int) (480.0 * (120.0 / fbpm) * SystemProperties.getInstance().getDimOffset());
             if (newCellWidth < 160) {
                 newCellWidth = 160;
             }
-            else if (newCellWidth > 1200) {
-                newCellWidth = 1200;
+            else if (newCellWidth > 2400) {
+                newCellWidth = 2400;
             }
             setMeasCellWidth(newCellWidth);
         }

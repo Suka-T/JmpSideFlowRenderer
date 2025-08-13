@@ -34,83 +34,27 @@ public class LayoutConfig {
 
     public static enum ENotesDesign {
         Normal, Flat, Arc;
-
-        @Override
-        public String toString() {
-            switch (this) {
-                case Normal:
-                    return "normal";
-                case Flat:
-                    return "flat";
-                case Arc:
-                    return "arc";
-                default:
-                    return "";
-            }
-        }
     }
-
     private static Object[] ENotesDesignO = { ENotesDesign.Normal, ENotesDesign.Flat, ENotesDesign.Arc };
-    private static String[] ENotesDesignS = { ENotesDesign.Normal.toString(), ENotesDesign.Flat.toString(), ENotesDesign.Arc.toString() };
+    private static String[] ENotesDesignS = { "normal", "flat", "arc" };
 
     public static enum ECursorType {
         Keyboard, Line;
-
-        @Override
-        public String toString() {
-            switch (this) {
-                case Keyboard:
-                    return "keyboard";
-                case Line:
-                    return "line";
-                default:
-                    return "";
-            }
-        }
     }
-
     private static Object[] ECursorTypeO = { ECursorType.Keyboard, ECursorType.Line };
-    private static String[] ECursorTypeS = { ECursorType.Keyboard.toString(), ECursorType.Line.toString() };
+    private static String[] ECursorTypeS = { "keyboard", "line" };
 
     public static enum EColorRule {
         Channel, Track;
-
-        @Override
-        public String toString() {
-            switch (this) {
-                case Channel:
-                    return "channel";
-                case Track:
-                    return "track";
-                default:
-                    return "";
-            }
-        }
     }
-
     private static Object[] EColorRuleO = { EColorRule.Channel, EColorRule.Track };
-    private static String[] EColorRuleS = { EColorRule.Channel.toString(), EColorRule.Track.toString() };
+    private static String[] EColorRuleS = { "channel", "track" };
 
     public static enum EColorAsign {
         Inherit, Asign, None;
-
-        @Override
-        public String toString() {
-            switch (this) {
-                case Inherit:
-                    return "inherit";
-                case Asign:
-                    return "asign";
-                case None:
-                    return "none";
-                default:
-                    return "";
-            }
-        }
     }
-
     private static Object[] EColorAsignO = { EColorAsign.Inherit, EColorAsign.Asign, EColorAsign.None };
-    private static String[] EColorAsignS = { EColorAsign.Inherit.toString(), EColorAsign.Asign.toString(), EColorAsign.None.toString() };
+    private static String[] EColorAsignS = { "inherit", "asign", "none" };
 
     private static Object[] CursorPosO = { -1 };
     private static String[] CursorPosS = { "top" };

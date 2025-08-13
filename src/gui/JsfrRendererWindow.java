@@ -4,8 +4,8 @@ import java.awt.Graphics;
 
 public class JsfrRendererWindow extends RendererWindow {
 
-    public JsfrRendererWindow() {
-        super();
+    public JsfrRendererWindow(int winW, int winH) {
+        super(winW, winH);
         this.setTitle("JMP Side Flow Renderer");
     }
 
