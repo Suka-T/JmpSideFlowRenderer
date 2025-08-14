@@ -9,20 +9,33 @@ import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
 import layout.LayoutConfig.EColorAsign;
+import layout.LayoutConfig.ENotesDesign;
 import layout.parts.ArcNotesPainter;
 import layout.parts.FlatNotesPainter;
+import layout.parts.FrameNotesPainter;
 import layout.parts.NormalNotesPainter;
 import layout.parts.NotesPainter;
 import plg.SystemProperties;
 
 public class LayoutManager {
     public static final int DEFAULT_TICK_MEAS = 1;
+    
+    private static Map<LayoutConfig.ENotesDesign, NotesPainter> painters = new HashMap<LayoutConfig.ENotesDesign, NotesPainter>() {
+        {
+            put(ENotesDesign.Normal, new NormalNotesPainter());
+            put(ENotesDesign.Flat, new FlatNotesPainter());
+            put(ENotesDesign.Arc, new ArcNotesPainter());
+            put(ENotesDesign.Frame, new FrameNotesPainter());
+        }
+    };
 
     private List<Color> notesColor = null;
     private List<Color> notesBorderColor = null;
@@ -36,8 +49,6 @@ public class LayoutManager {
     private Color bgColorReverse = null;
 
     private Canvas rootCanvas = null;
-
-    private NotesPainter notesPainter = null;
 
     // 現在のレイアウト設定
     private LayoutConfig layout = new LayoutConfig();
@@ -116,17 +127,6 @@ public class LayoutManager {
         bdColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PLAYER_BDCOLOR));
         pbColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PB_COLOR));
         bgColorReverse = ((bgColor.getRed() + bgColor.getGreen() + bgColor.getBlue()) / 3) >= 128 ? Color.BLACK : Color.WHITE;
-
-        LayoutConfig.ENotesDesign notesDesign = (LayoutConfig.ENotesDesign) layout.getData(LayoutConfig.LC_NOTES_DESIGN);
-        if (notesDesign == LayoutConfig.ENotesDesign.Normal) {
-            notesPainter = new NormalNotesPainter();
-        }
-        else if (notesDesign == LayoutConfig.ENotesDesign.Arc) {
-            notesPainter = new ArcNotesPainter();
-        }
-        else {
-            notesPainter = new FlatNotesPainter();
-        }
     }
 
     public void read(File f) throws IOException {
@@ -208,7 +208,11 @@ public class LayoutManager {
     }
 
     public NotesPainter getNotesPainter() {
-        return notesPainter;
+        LayoutConfig.ENotesDesign notesDesign = (LayoutConfig.ENotesDesign) layout.getData(LayoutConfig.LC_NOTES_DESIGN);
+        if (JMPCoreAccessor.getSoundManager().getMidiUnit().isRenderingOnlyMode() == true) {
+            return painters.get(LayoutConfig.ENotesDesign.Normal);
+        }
+        return painters.get(notesDesign);
     }
 
     public Color getBgColorReverse() {

@@ -33,10 +33,10 @@ public class LayoutConfig {
     public static final String LC_INFO_VISIBLE = "info.visible";
 
     public static enum ENotesDesign {
-        Normal, Flat, Arc;
+        Normal, Flat, Arc, Frame;
     }
-    private static Object[] ENotesDesignO = { ENotesDesign.Normal, ENotesDesign.Flat, ENotesDesign.Arc };
-    private static String[] ENotesDesignS = { "normal", "flat", "arc" };
+    private static Object[] ENotesDesignO = { ENotesDesign.Normal, ENotesDesign.Flat, ENotesDesign.Arc, ENotesDesign.Frame };
+    private static String[] ENotesDesignS = { "normal", "flat", "arc", "frame" };
 
     public static enum ECursorType {
         Keyboard, Line;
