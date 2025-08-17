@@ -6,7 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import plg.PropertiesNode;
@@ -28,9 +30,44 @@ public class LayoutConfig {
     public static final String LC_PB_VISIBLE = "pb.visible";
     public static final String LC_NOTES_DESIGN = "notes.design";
     public static final String LC_NOTES_COLOR_ASIGN = "notes.colasign";
+    public static final String LC_NOTES_COLOR_NUM = "notes.colorNum";
     public static final String LC_NOTES_COLOR = "notes.color";
     public static final String LC_NOTES_COLOR_BORDER_RGB = "notes.border.colorRGB";
     public static final String LC_INFO_VISIBLE = "info.visible";
+    
+    public static final Map<String, String> SwapKeyName = new HashMap<String, String>() {
+        {
+            put(LC_PLAYER_BGCOLOR, "Renderer background color");
+            put(LC_PLAYER_BDCOLOR, "Renderer border color");
+            put(LC_PLAYER_COLOR_RULE, "Color function [ Track or Channel ]");
+            put(LC_PLAYER_BORDER_VERTICAL_VISIBLE, "Vertical border visible");
+            put(LC_PLAYER_BORDER_HORIZON_VISIBLE, "Horizon border visible");
+            put(LC_CURSOR_TYPE, "View Keyboard or Line");
+            put(LC_CURSOR_COLOR, "Hit Line color");
+            put(LC_CURSOR_EFFE_COLOR, "Hit Line effect color");
+            put(LC_CURSOR_EFFE_VISIBLE, "Hit Line effect visible");
+            put(LC_NOTES_DESIGN, "Notes design");
+            put(LC_NOTES_COLOR_NUM, "Use notes color count");
+            put(LC_NOTES_COLOR + "1", "Track1 notes color");
+            put(LC_NOTES_COLOR + "2", "Track2 notes color");
+            put(LC_NOTES_COLOR + "3", "Track3 notes color");
+            put(LC_NOTES_COLOR + "4", "Track4 notes color");
+            put(LC_NOTES_COLOR + "5", "Track5 notes color");
+            put(LC_NOTES_COLOR + "6", "Track6 notes color");
+            put(LC_NOTES_COLOR + "7", "Track7 notes color");
+            put(LC_NOTES_COLOR + "8", "Track8 notes color");
+            put(LC_NOTES_COLOR + "9", "Track9 notes color");
+            put(LC_NOTES_COLOR + "10", "Track10 notes color");
+            put(LC_NOTES_COLOR + "11", "Track11 notes color");
+            put(LC_NOTES_COLOR + "12", "Track12 notes color");
+            put(LC_NOTES_COLOR + "13", "Track13 notes color");
+            put(LC_NOTES_COLOR + "14", "Track14 notes color");
+            put(LC_NOTES_COLOR + "15", "Track15 notes color");
+            put(LC_NOTES_COLOR + "16", "Track16 notes color");
+            put(LC_NOTES_COLOR_BORDER_RGB, "Notes border color hilight");
+            put(LC_INFO_VISIBLE, "Notes monitor visible");
+        }
+    };
 
     public static enum ENotesDesign {
         Normal, Flat, Arc, Frame;
@@ -60,7 +97,6 @@ public class LayoutConfig {
     private static String[] CursorPosS = { "top" };
 
     private List<PropertiesNode> nodes;
-    public List<String> notesColorCodes;
 
     public LayoutConfig() {
         nodes = new ArrayList<>();
@@ -78,12 +114,29 @@ public class LayoutConfig {
         nodes.add(new PropertiesNode(LC_PB_VISIBLE, PropertiesNodeType.BOOLEAN, "false"));
         nodes.add(new PropertiesNode(LC_NOTES_DESIGN, PropertiesNodeType.ITEM, ENotesDesign.Normal, ENotesDesignS, ENotesDesignO));
         nodes.add(new PropertiesNode(LC_NOTES_COLOR_ASIGN, PropertiesNodeType.ITEM, EColorAsign.Asign, EColorAsignS, EColorAsignO));
-        nodes.add(new PropertiesNode(LC_NOTES_COLOR, PropertiesNodeType.COLOR, "#00ff00"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR_NUM, PropertiesNodeType.INT, "12", "1", "16"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "1", PropertiesNodeType.COLOR, "#87AACF"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "2", PropertiesNodeType.COLOR, "#A1E55C"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "3", PropertiesNodeType.COLOR, "#FCAF3E"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "4", PropertiesNodeType.COLOR, "#FCEB57"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "5", PropertiesNodeType.COLOR, "#CB91D0"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "6", PropertiesNodeType.COLOR, "#EE7878"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "7", PropertiesNodeType.COLOR, "#3366FF"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "8", PropertiesNodeType.COLOR, "#FF7E33"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "9", PropertiesNodeType.COLOR, "#33FF66"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "10", PropertiesNodeType.COLOR, "#FF3381"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "11", PropertiesNodeType.COLOR, "#33FFFF"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "12", PropertiesNodeType.COLOR, "#E433FF"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "13", PropertiesNodeType.COLOR, "#ffffff"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "14", PropertiesNodeType.COLOR, "#ffffff"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "15", PropertiesNodeType.COLOR, "#ffffff"));
+        nodes.add(new PropertiesNode(LC_NOTES_COLOR + "16", PropertiesNodeType.COLOR, "#ffffff"));
         nodes.add(new PropertiesNode(LC_NOTES_COLOR_BORDER_RGB, PropertiesNodeType.DOUBLE, "1.5", "0.1", "2.0"));
         nodes.add(new PropertiesNode(LC_INFO_VISIBLE, PropertiesNodeType.BOOLEAN, "true"));
-
-        notesColorCodes = new ArrayList<String>();
-
+        definication();
+    }
+    
+    public void definication() {
         // ロードする文字列
         String propertiesString = "";
         Properties props = new Properties();
@@ -96,7 +149,10 @@ public class LayoutConfig {
         }
     }
     
-
+    public List<PropertiesNode> getNodes() {
+        return nodes;
+    }
+    
     private PropertiesNode getPropNode(String key) {
         for (PropertiesNode nd : nodes) {
             if (nd.getKey().equalsIgnoreCase(key)) {
@@ -110,15 +166,6 @@ public class LayoutConfig {
         String str = props.getProperty(key);
         PropertiesNode node = getPropNode(key);
         node.setObject(str);
-    }
-
-    private Object getPropObject(Properties props, String pkey, String nkey) {
-        String str = props.getProperty(pkey);
-        if (str == null) {
-            return null;
-        }
-        PropertiesNode node = getPropNode(nkey);
-        return node.getObject(str);
     }
     
     public Object getData(String key) {
@@ -139,17 +186,9 @@ public class LayoutConfig {
         for (PropertiesNode nd : nodes) {
             setPropObject(props, nd.getKey());
         }
-
-        // 以下、ネイティブ変数に分ける
-        notesColorCodes.clear();
-        StringBuilder sb = new StringBuilder(64); // 初期容量を指定
-        for (int i = 1; i <= 512; i++) {
-            sb.setLength(0);
-            sb.append(LC_NOTES_COLOR).append(i);
-            String str = (String) getPropObject(props, sb.toString(), LC_NOTES_COLOR);
-            if (str != null) {
-                notesColorCodes.add(str);
-            }
-        }
+    }
+    
+    public void initialize() {
+        
     }
 }

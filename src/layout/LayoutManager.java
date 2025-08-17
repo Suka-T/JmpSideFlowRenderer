@@ -23,6 +23,7 @@ import layout.parts.FlatNotesPainter;
 import layout.parts.FrameNotesPainter;
 import layout.parts.NormalNotesPainter;
 import layout.parts.NotesPainter;
+import plg.PropertiesNode;
 import plg.SystemProperties;
 
 public class LayoutManager {
@@ -61,6 +62,10 @@ public class LayoutManager {
     public static LayoutManager getInstance() {
         return instance;
     }
+    
+    public List<PropertiesNode> getNodes() {
+        return layout.getNodes();
+    }
 
     public VolatileImage createLayerImage(int width, int height) {
         GraphicsConfiguration gc = rootCanvas.getGraphicsConfiguration();
@@ -78,32 +83,17 @@ public class LayoutManager {
         notesBorderColor = new ArrayList<Color>();
         ISystemManager sm = JMPCoreAccessor.getSystemManager();
 
-        if (layout.notesColorCodes.isEmpty() == true) {
-            if (layout.notesColorCodes.isEmpty() == true) {
-                layout.notesColorCodes.add("#87AACF");
-                layout.notesColorCodes.add("#A1E55C");
-                layout.notesColorCodes.add("#FCAF3E");
-                layout.notesColorCodes.add("#FCEB57");
-                layout.notesColorCodes.add("#CB91D0");
-                layout.notesColorCodes.add("#EE7878");
-                layout.notesColorCodes.add("#3366FF");
-                layout.notesColorCodes.add("#FF7E33");
-                layout.notesColorCodes.add("#33FF66");
-                layout.notesColorCodes.add("#FF3381");
-                layout.notesColorCodes.add("#33FFFF");
-                layout.notesColorCodes.add("#E433FF");
-            }
-        }
-
         EColorAsign colAsign = (EColorAsign) layout.getData(LayoutConfig.LC_NOTES_COLOR_ASIGN);
+        int notesColorNum = (int) layout.getData(LayoutConfig.LC_NOTES_COLOR_NUM);
         if (colAsign == LayoutConfig.EColorAsign.Inherit || colAsign == LayoutConfig.EColorAsign.None) {
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < notesColorNum; i++) {
                 String key = String.format("ch_color_%d", (i + 1));
                 notesColor.add(Utility.convertCodeToHtmlColor(sm.getCommonRegisterValue(key)));
             }
         }
         if (colAsign == LayoutConfig.EColorAsign.Inherit || colAsign == LayoutConfig.EColorAsign.Asign) {
-            for (String s : layout.notesColorCodes) {
+            for (int i = 0; i < notesColorNum; i++) {
+                String s = (String) layout.getData(LayoutConfig.LC_NOTES_COLOR + (i + 1));
                 notesColor.add(Utility.convertCodeToHtmlColor(s));
             }
         }
@@ -127,6 +117,10 @@ public class LayoutManager {
         bdColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PLAYER_BDCOLOR));
         pbColor = Utility.convertCodeToHtmlColor((String) layout.getData(LayoutConfig.LC_PB_COLOR));
         bgColorReverse = ((bgColor.getRed() + bgColor.getGreen() + bgColor.getBlue()) / 3) >= 128 ? Color.BLACK : Color.WHITE;
+    }
+    
+    public void initializeConfig() {
+        layout.definication();
     }
 
     public void read(File f) throws IOException {

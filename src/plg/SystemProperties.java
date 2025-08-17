@@ -5,7 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import plg.PropertiesNode.PropertiesNodeType;
@@ -21,6 +23,20 @@ public class SystemProperties {
     public static final String SYSP_RENDERER_NOTESIMAGENUM = "renderer.notesImageNum";
     public static final String SYSP_RENDERER_DIMENSION = "renderer.dimension";
     public static final String SYSP_RENDERER_WINSIZE = "renderer.windowSize";
+
+    public static final Map<String, String> SwapKeyName = new HashMap<String, String>() {
+        {
+            put(SYSP_LAYOUT, "Preload settings file name");
+            put(SYSP_DEBUGMODE, "Debug mode enable");
+            put(SYSP_RENDERER_WORKNUM, "Rendering thread count [3 - 20]");
+            put(SYSP_RENDERER_FPS, "Fixed frame rate");
+            put(SYSP_RENDERER_LAYERORDER, "Track rendering order");
+            put(SYSP_RENDERER_NOTESSPEED, "Notes Speed [1 - 100 | auto]");
+            put(SYSP_RENDERER_NOTESIMAGENUM, "Rendering notes image size [3 - 100]");
+            put(SYSP_RENDERER_DIMENSION, "Renderer dimension");
+            put(SYSP_RENDERER_WINSIZE, "Window size");
+        }
+    };
 
     public static int DIM_CALC_FUNC = 0; // 0:W, 1:H
     public static int DEFAULT_KEY_WIDTH = 50;
@@ -71,14 +87,18 @@ public class SystemProperties {
         nodes.add(new PropertiesNode(SYSP_RENDERER_KEYWIDTH, PropertiesNodeType.INT, "420", "", ""));
         nodes.add(new PropertiesNode(SYSP_RENDERER_NOTESSPEED, PropertiesNodeType.INT, "-1", "1", "100", NotesSpeedItemS, NotesSpeedItemO));
         nodes.add(new PropertiesNode(SYSP_RENDERER_NOTESIMAGENUM, PropertiesNodeType.INT, "60", "3", "100", NotesCountItemS, NotesCountItemO));
-        nodes.add(new PropertiesNode(SYSP_RENDERER_DIMENSION, PropertiesNodeType.STRING, "1280×768", WinSizeItemS, WinSizeItemD));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_DIMENSION, PropertiesNodeType.ITEM, "1280×768", WinSizeItemS, WinSizeItemD));
         // nodes.add(new PropertiesNode(SYSP_RENDERER_DIMENSION,
         // PropertiesNodeType.STRING, "1920×1024"));
-        nodes.add(new PropertiesNode(SYSP_RENDERER_WINSIZE, PropertiesNodeType.STRING, "1280×720", WinSizeItemS, WinSizeItemO));
+        nodes.add(new PropertiesNode(SYSP_RENDERER_WINSIZE, PropertiesNodeType.ITEM, "1280×720", WinSizeItemS, WinSizeItemO));
     }
 
     public static SystemProperties getInstance() {
         return instance;
+    }
+
+    public List<PropertiesNode> getNodes() {
+        return nodes;
     }
 
     private PropertiesNode getPropNode(String key) {
@@ -110,6 +130,9 @@ public class SystemProperties {
         for (PropertiesNode nd : nodes) {
             setPropObject(props, nd.getKey());
         }
+    }
+
+    public void iniialize() {
 
         // 以下、ネイティブ変数に分ける
         int notesSpeed = (int) getData(SYSP_RENDERER_NOTESSPEED);

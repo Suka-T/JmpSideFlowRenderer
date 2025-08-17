@@ -2,6 +2,7 @@ package plg;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class PropertiesNode {
 
@@ -16,8 +17,10 @@ public class PropertiesNode {
     private String maxSVal = "";
     private String minSVal = "";
     private Map<String, Object> map = new HashMap<String, Object>();
+    private Map<Object, String> v2kmap = new HashMap<Object, String>();
     private Object defaultItem = null;
     private PropertiesNodeType type;
+    private String[] itemArray = null;
 
     private static int toInt(String str, int def) {
         try {
@@ -61,9 +64,14 @@ public class PropertiesNode {
         this.type = type;
 
         this.map.clear();
+        this.v2kmap.clear();
         for (int i = 0; i < itemName.length; i++) {
             this.map.put(itemName[i].toLowerCase(), itemObjs[i]);
+            if (this.v2kmap.containsKey(itemObjs[i]) == false) {
+                this.v2kmap.put(itemObjs[i], itemName[i].toLowerCase());
+            }
         }
+        this.itemArray = itemName;
     }
 
     public PropertiesNode(String key, PropertiesNodeType type, String defVal) {
@@ -71,6 +79,7 @@ public class PropertiesNode {
         this.defaultSVal = defVal;
         this.type = type;
         this.map.clear();
+        this.v2kmap.clear();
     }
 
     public PropertiesNode(String key, PropertiesNodeType type, String defVal, String minVal, String maxVal) {
@@ -80,6 +89,7 @@ public class PropertiesNode {
         this.maxSVal = maxVal;
         this.type = type;
         this.map.clear();
+        this.v2kmap.clear();
     }
 
     public PropertiesNode(String key, PropertiesNodeType type, Object defaultItem, String[] itemName, Object[] itemObjs) {
@@ -88,17 +98,59 @@ public class PropertiesNode {
         this.defaultItem = defaultItem;
 
         this.map.clear();
+        this.v2kmap.clear();
         for (int i = 0; i < itemName.length; i++) {
             this.map.put(itemName[i], itemObjs[i]);
+            if (this.v2kmap.containsKey(itemObjs[i]) == false) {
+                this.v2kmap.put(itemObjs[i], itemName[i].toLowerCase());
+            }
         }
+        this.itemArray = itemName;
     }
     
     public String getKey() {
         return key;
     }
     
+    public PropertiesNodeType getType() {
+        return this.type;
+    }
+    
     public Object getData() {
         return data;
+    }
+    
+    public Set getItems() {
+        return map.keySet();
+    }
+    
+    public String getDataString() {
+        if (data == null) return "";
+        
+        if (v2kmap.containsKey(data)) {
+            return (String) v2kmap.get(data);
+        }
+        
+        if (type == PropertiesNodeType.INT) {
+            return String.valueOf((int)data);
+        }
+        else if (type == PropertiesNodeType.BOOLEAN) {
+            return String.valueOf((boolean)data);
+        }
+        else if (type == PropertiesNodeType.DOUBLE) {
+            return String.valueOf((double)data);
+        }
+        else if (type == PropertiesNodeType.STRING) {
+            return String.valueOf((String)data);
+        }
+        else if (type == PropertiesNodeType.COLOR) {
+            return String.valueOf((String)data);
+        }
+        else if (type == PropertiesNodeType.ITEM) {
+            
+            return (String) v2kmap.get(data);
+        }
+        return "";
     }
     
     public void setObject(String s) {
@@ -174,6 +226,10 @@ public class PropertiesNode {
             obj = (Object) s;
         }
         return obj;
+    }
+
+    public String[] getItemArray() {
+        return itemArray;
     }
 
 }

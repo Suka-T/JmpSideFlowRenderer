@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import javax.swing.SwingUtilities;
 
 import gui.JsfrRendererWindow;
+import gui.RendererConfigDialog;
 import gui.RendererWindow;
 import jlib.core.ISystemManager;
 import jlib.core.JMPCoreAccessor;
@@ -54,6 +55,13 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
                 fullPath = folder.resolve(layoutFilename);
                 LayoutManager.getInstance().read(new File(fullPath.toString()));
             }
+            
+            if (JMPCoreAccessor.getSystemManager().isEnableStandAlonePlugin() == true) {
+                RendererConfigDialog cfgDlg = new RendererConfigDialog(this);
+                cfgDlg.setVisible(true);
+            }
+            
+            SystemProperties.getInstance().iniialize();
         }
         catch (IOException e1) {
             // e1.printStackTrace();

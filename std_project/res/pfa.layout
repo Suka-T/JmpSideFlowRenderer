@@ -6,6 +6,7 @@ cursor.position=top
 cursor.type=keyboard
 info.visible=true
 notes.colasign=asign
+notes.colorNum=6
 notes.color1=3366FF
 notes.color2=FF7E33
 notes.color3=33FF66
