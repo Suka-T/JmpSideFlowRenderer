@@ -45,34 +45,57 @@ public class ImagerWorkerManager {
     }
     
     public void firstRender(int leftMeas, int dispMeas, int flipCount) {
-        int i = 0;
-        int offsetLeftMeas = Math.abs(leftMeas);
-        int flipMergin = -(flipCount);
-        int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
-        workers[i].reset();
-        workers[i].setLeftMeasTh(-(flipLine));
-        workers[i].disposeImage();
-        workers[i].makeImage();
+        reset(leftMeas, dispMeas, flipCount);
+        
+        // 最初のワーカーのレンダリングが終わるまで待つ
         try {
-            // 最初のワーカーのレンダリングが終わるまで待つ 
-            while (workers[i].isExec()) {
-                Thread.sleep(50);
-            }
+            // 全てのワーカーのレンダリングが終わるまで待つ
+            int workerCnt;
+            do {
+                workerCnt = 0;
+                for (ImageWorker w : workers) {
+                    if (w.isExec() == false) workerCnt++;
+                }
+                Thread.sleep(10);
+            } while (workers.length > workerCnt);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
         
-        if (workers.length >= 2) {
-            for (i = 1; i < workers.length; i++) {
-                flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
-                workers[i].reset();
-                workers[i].setLeftMeasTh(-(flipLine));
-                workers[i].disposeImage();
-                workers[i].makeImage();
-            }
-        }
-        currentWorkerIndex = 0;
+//        if (workers.length < 10) {
+//            reset(leftMeas, dispMeas, flipCount);
+//            return;
+//        }
+//        
+//        int i = 0;
+//        int offsetLeftMeas = Math.abs(leftMeas);
+//        int flipMergin = -(flipCount);
+//        int flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+//        workers[i].reset();
+//        workers[i].setLeftMeasTh(-(flipLine));
+//        workers[i].disposeImage();
+//        workers[i].makeImage();
+//        try {
+//            // 最初のワーカーのレンダリングが終わるまで待つ
+//            while (workers[i].isExec()) {
+//                Thread.sleep(50);
+//            }
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        
+//        if (workers.length >= 2) {
+//            for (i = 1; i < workers.length; i++) {
+//                flipLine = offsetLeftMeas + ((dispMeas + flipMergin) * i);
+//                workers[i].reset();
+//                workers[i].setLeftMeasTh(-(flipLine));
+//                workers[i].disposeImage();
+//                workers[i].makeImage();
+//            }
+//        }
+//        currentWorkerIndex = 0;
     }
 
     public void reset(int leftMeas, int dispMeas, int flipCount) {
