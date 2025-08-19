@@ -1,6 +1,8 @@
 
 
+import gui.JsfrRendererWindow;
 import plg.AbstractRenderPlugin;
+import plg.SystemProperties;
 
 public class JmpSideFlowRenderer extends AbstractRenderPlugin {
 
@@ -10,6 +12,14 @@ public class JmpSideFlowRenderer extends AbstractRenderPlugin {
 
     public JmpSideFlowRenderer() {
         super();
+    }
+    
+    @Override
+    protected void createMainWindow() {
+        MainWindow = new JsfrRendererWindow(
+                SystemProperties.getInstance().getWindowWidth(), 
+                SystemProperties.getInstance().getWindowHeight());
+        MainWindow.init();
     }
 
     @Override

@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 
 import javax.swing.SwingUtilities;
 
-import gui.JsfrRendererWindow;
 import gui.RendererConfigDialog;
 import gui.RendererWindow;
 import jlib.core.ISystemManager;
@@ -27,10 +26,6 @@ public class AbstractRenderPlugin extends JMidiPlugin implements IPlayerListener
     }
 
     protected void createMainWindow() {
-        MainWindow = new JsfrRendererWindow(
-                SystemProperties.getInstance().getWindowWidth(), 
-                SystemProperties.getInstance().getWindowHeight());
-        MainWindow.init();
     }
 
     @Override

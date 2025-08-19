@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.TransferHandler;
 
-import function.Utility;
 import image.ImagerWorkerManager;
 import jlib.core.ISystemManager;
 import jlib.core.IWindowManager;
@@ -41,7 +40,6 @@ import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import layout.LayoutConfig;
 import layout.LayoutManager;
-import plg.AbstractRenderPlugin;
 import plg.SystemProperties;
 import plg.SystemProperties.SyspLayerOrder;
 
@@ -1111,29 +1109,7 @@ public class RendererWindow extends JFrame implements MouseListener, MouseMotion
 
         // 一番先頭のファイルを取得
         if ((files != null) && (files.size() > 0)) {
-
-            if (JMPCoreAccessor.getSoundManager().isPlay() == true) {
-                JMPCoreAccessor.getSoundManager().stop();
-            }
-
-            if (files.size() >= 2) {
-
-                String exMidi = JMPCoreAccessor.getSystemManager().getCommonRegisterValue(ISystemManager.COMMON_REGKEY_NO_EXTENSION_MIDI);
-                String path1 = files.get(0).getPath();
-                String path2 = files.get(1).getPath();
-                if (Utility.checkExtensions(path1, exMidi.split(",")) == true) {
-                    JMPCoreAccessor.getFileManager().loadDualFileToPlay(path1, path2);
-                }
-                else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
-                    JMPCoreAccessor.getFileManager().loadDualFileToPlay(path2, path1);
-                }
-            }
-            else {
-                String path = files.get(0).getPath();
-                if (Utility.checkExtensions(path, AbstractRenderPlugin.Extensions.split(",")) == true) {
-                    JMPCoreAccessor.getFileManager().loadFileToPlay(path);
-                }
-            }
+            SystemProperties.getInstance().loadAudioFiles(files.toArray(new File[0]));
         }
     }
 }

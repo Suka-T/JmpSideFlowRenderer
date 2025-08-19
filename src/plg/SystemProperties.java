@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import function.Utility;
+import jlib.core.ISystemManager;
+import jlib.core.JMPCoreAccessor;
 import plg.PropertiesNode.PropertiesNodeType;
 
 public class SystemProperties {
@@ -73,9 +76,10 @@ public class SystemProperties {
 
     private int windowWidth = 1280;
     private int windowHeight = 720;
+    
+    private List<File> preloadFiles = new ArrayList<File>();
 
     private static SystemProperties instance = new SystemProperties();
-
     private SystemProperties() {
         nodes = new ArrayList<>();
 
@@ -189,6 +193,42 @@ public class SystemProperties {
         keyWidth = (int) ((double) DEFAULT_KEY_WIDTH * dimOffset);
         notesWidth = (int) ((double) notesWidth * dimOffset);
     }
+    
+    public void preloadAudioFiles() {
+        if (preloadFiles.isEmpty() == false) {
+            loadAudioFiles(preloadFiles.toArray(new File[0]));
+            preloadFiles.clear();
+        }
+    }
+    
+    public void loadAudioFiles(File... files) {
+        // 一番先頭のファイルを取得
+        if ((files != null) && (files.length > 0)) {
+
+            if (JMPCoreAccessor.getSoundManager().isPlay() == true) {
+                JMPCoreAccessor.getSoundManager().stop();
+            }
+
+            if (files.length >= 2) {
+
+                String exMidi = JMPCoreAccessor.getSystemManager().getCommonRegisterValue(ISystemManager.COMMON_REGKEY_NO_EXTENSION_MIDI);
+                String path1 = files[0].getPath();
+                String path2 = files[1].getPath();
+                if (Utility.checkExtensions(path1, exMidi.split(",")) == true) {
+                    JMPCoreAccessor.getFileManager().loadDualFileToPlay(path1, path2);
+                }
+                else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
+                    JMPCoreAccessor.getFileManager().loadDualFileToPlay(path2, path1);
+                }
+            }
+            else {
+                String path = files[0].getPath();
+                if (Utility.checkExtensions(path, AbstractRenderPlugin.Extensions.split(",")) == true) {
+                    JMPCoreAccessor.getFileManager().loadFileToPlay(path);
+                }
+            }
+        }
+    }
 
     public int getWorkerNum() {
         return (int) getPropNode(SYSP_RENDERER_WORKNUM).getData();
@@ -244,5 +284,9 @@ public class SystemProperties {
 
     public double getDimOffset() {
         return dimOffset;
+    }
+
+    public List<File> getPreloadFiles() {
+        return preloadFiles;
     }
 }
